@@ -7,12 +7,12 @@ export default function Home() {
             <main className="px-6 py-6 max-w-7xl mx-auto">
                 {/* Greeting */}
                 <div className="mb-6">
-                    <h1 className="text-xl font-semibold">Hi, Samantha!</h1>
+                    <h1 className="text-lg font-bold">Hi, Samantha!</h1>
                 </div>
 
                 {/* Trending Albums */}
                 <section className="mb-8">
-                    <h2 className="text-lg font-medium mb-4">Trending albums and singles</h2>
+                    <h2 className="text-xl font-semibold mb-4">Trending albums and singles</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {[...Array(3)].map((_, i) => (
                             <div key={i} className="relative group cursor-pointer overflow-hidden rounded-lg">
@@ -36,7 +36,7 @@ export default function Home() {
                 {/* Recently Played */}
                 <section className="mb-8">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-medium">Recently Played</h2>
+                        <h2 className="text-xl font-semibold">Recently Played</h2>
                         <div className="flex items-center space-x-2">
                             <button className="text-sm text-gray-400 hover:text-white transition">Show All</button>
                             <button
@@ -79,7 +79,7 @@ export default function Home() {
                 {/* Favorite Artists */}
                 <section className="mb-8">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-medium">Favorite artists</h2>
+                        <h2 className="text-xl font-semibold">Favorite artists</h2>
                         <div className="flex space-x-2">
                             <button
                                 className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition">
@@ -119,7 +119,7 @@ export default function Home() {
                 {/* Made For You */}
                 <section className="mb-8">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-medium">Made for You</h2>
+                        <h2 className="text-xl font-semibold">Made for You</h2>
                         <div className="flex items-center space-x-2">
                             <button className="text-sm text-gray-400 hover:text-white transition">Show All</button>
                             <button
@@ -196,7 +196,7 @@ export default function Home() {
                 {/* Doja Cat Fans Like */}
                 <section className="mb-8">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-medium">Doja Cat Fans Like</h2>
+                        <h2 className="text-xl font-semibold">Doja Cat Fans Like</h2>
                         <div className="flex space-x-2">
                             <button
                                 className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition">
@@ -246,7 +246,7 @@ export default function Home() {
                 {/* Playlists for You */}
                 <section className="mb-8">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-medium">Playlists for You</h2>
+                        <h2 className="text-xl font-semibold">Playlists for You</h2>
                         <div className="flex items-center space-x-2">
                             <button className="text-sm text-gray-400 hover:text-white transition">Show All</button>
                             <button
@@ -291,7 +291,7 @@ export default function Home() {
                 {/* Haven't Listened In A Long Time */}
                 <section className="mb-8">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-medium">Haven&#39;t listened in a long time</h2>
+                        <h2 className="text-xl font-semibold">Haven&#39;t listened in a long time</h2>
                         <div className="flex space-x-2">
                             <button
                                 className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition">
