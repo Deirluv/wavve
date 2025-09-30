@@ -2,10 +2,12 @@ import { NextResponse } from "next/server"
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0" // so that request will be allowed to fetch data from localhost (cuz next.js HTTPS with self-signed certificate)
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
 export async function POST(request: Request) {
     const body = await request.json()
     try {
-        const res = await fetch("https://localhost:7108/api/Auth/register", {
+        const res = await fetch(`${apiUrl}/Auth/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),

@@ -3,6 +3,8 @@ import { JWT } from "next-auth/jwt"
 import CredentialsProvider from "next-auth/providers/credentials"
 import jwt from "jsonwebtoken"
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
 export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
@@ -23,7 +25,7 @@ export const authOptions: NextAuthOptions = {
                 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0" // so that request will be allowed to fetch data from localhost (cuz next.js HTTPS with self-signed certificate)
 
                 console.log("Login credentials:", credentials.email, credentials.password)
-                const res = await fetch("https://localhost:7108/api/Auth/login", {
+                const res = await fetch(`${apiUrl}/Auth/login`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

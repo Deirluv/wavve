@@ -10,8 +10,6 @@ export default function RegisterPage() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [displayName, setDisplayName] = useState("")
-    const [age, setAge] = useState("")
-    const [gender, setGender] = useState("")
     const [error, setError] = useState("")
     const router = useRouter()
 
@@ -45,8 +43,6 @@ export default function RegisterPage() {
                     email,
                     password,
                     displayName,
-                    age,
-                    gender,
                 }),
             })
 

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import SearchBar from "./SearchBar";
 import Image from "next/image";
 import { User, Heart, List, Music } from "lucide-react";
@@ -9,10 +9,16 @@ import { createPortal } from "react-dom";
 
 export default function Header() {
     const pathname = usePathname();
+    const router = useRouter();
+
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const menuRef = useRef<HTMLButtonElement | null>(null);
-    const [menuCoords, setMenuCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+    const menuButtonRef = useRef<HTMLButtonElement | null>(null); // avatar
+    const menuContainerRef = useRef<HTMLDivElement | null>(null); // portal menu
+    const [menuCoords, setMenuCoords] = useState<{ top: number; left: number }>({
+        top: 0,
+        left: 0,
+    });
 
     useEffect(() => {
         const token = localStorage.getItem("auth_token");
@@ -22,12 +28,18 @@ export default function Header() {
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-                setMenuOpen(false);
-            }
+            const target = e.target as Node | null;
+            // if click avatar - dont close
+            if (menuButtonRef.current && menuButtonRef.current.contains(target)) return;
+            // if click inside the portal - dont close
+            if (menuContainerRef.current && menuContainerRef.current.contains(target)) return;
+            // then close
+            setMenuOpen(false);
         }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+
+        // listening "click" so onClick on elements menu finished earlier
+        document.addEventListener("click", handleClickOutside);
+        return () => document.removeEventListener("click", handleClickOutside);
     }, []);
 
     const tabs = [
@@ -38,12 +50,16 @@ export default function Header() {
     ];
 
     const toggleMenu = () => {
-        if (!menuOpen && menuRef.current) {
-            const rect = menuRef.current.getBoundingClientRect();
+        if (!menuOpen && menuButtonRef.current) {
+            const rect = menuButtonRef.current.getBoundingClientRect();
+            // absolute transition body
             const offsetX = -180;
-            setMenuCoords({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX + offsetX });
+            setMenuCoords({
+                top: rect.bottom + window.scrollY,
+                left: rect.left + window.scrollX + offsetX,
+            });
         }
-        setMenuOpen(prev => !prev);
+        setMenuOpen((prev) => !prev);
     };
 
     return (
@@ -95,7 +111,7 @@ export default function Header() {
 
                             <div className="relative">
                                 <button
-                                    ref={menuRef}
+                                    ref={menuButtonRef}
                                     onClick={toggleMenu}
                                     className="w-10 h-10 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center hover:bg-gray-600"
                                 >
@@ -111,41 +127,59 @@ export default function Header() {
                                 {menuOpen &&
                                     createPortal(
                                         <div
+                                            // This wrapper is a portal. We attach a ref to it to know if a click was made inside it
+                                            ref={menuContainerRef}
                                             className="absolute w-52 rounded-xl shadow-lg bg-neutral-900 text-white ring-1 ring-gray-700 z-50"
-                                            style={{ top: menuCoords.top, left: menuCoords.left }}
+                                            style={{
+                                                position: "absolute",
+                                                top: menuCoords.top,
+                                                left: menuCoords.left,
+                                            }}
                                         >
                                             <div className="py-2">
-                                                <Link
-                                                    href="/profile"
-                                                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800"
+                                                <button
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        router.push("/profile");
+                                                    }}
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800 w-full text-left"
                                                 >
                                                     <User strokeWidth={2} />
                                                     Profile
-                                                </Link>
+                                                </button>
 
-                                                <Link
-                                                    href="/likes"
-                                                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800"
+                                                <button
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        router.push("/likes");
+                                                    }}
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800 w-full text-left"
                                                 >
                                                     <Heart strokeWidth={2} />
                                                     Likes
-                                                </Link>
+                                                </button>
 
-                                                <Link
-                                                    href="/playlists"
-                                                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800"
+                                                <button
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        router.push("/playlists");
+                                                    }}
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800 w-full text-left"
                                                 >
                                                     <List strokeWidth={2} />
                                                     Playlists
-                                                </Link>
+                                                </button>
 
-                                                <Link
-                                                    href="/tracks"
-                                                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800"
+                                                <button
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        router.push("/tracks");
+                                                    }}
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800 w-full text-left"
                                                 >
                                                     <Music strokeWidth={2} />
                                                     Tracks
-                                                </Link>
+                                                </button>
                                             </div>
                                         </div>,
                                         document.body
