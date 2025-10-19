@@ -1,8 +1,19 @@
+/* app/globals.css */
+
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  --color-sc-background: #121212;
+  --color-sc-text: #FFFFFF;
+  --color-sc-secondary: #C4C4C4;
+  --color-sc-tertiary: #888888;
+  --color-sc-accent: #954BFF;
+  --color-sc-card-bg: #1e1e1e;
+
+  --color-player-bg: #C4C4C4;
 }
 
 @media (prefers-color-scheme: dark) {

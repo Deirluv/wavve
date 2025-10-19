@@ -23,7 +23,7 @@ export default function Header() {
     useEffect(() => {
         const token = localStorage.getItem("auth_token");
         setIsAuthenticated(!!token);
-        setIsAuthenticated(true);
+        setIsAuthenticated(false);
     }, []);
 
     useEffect(() => {
@@ -46,7 +46,6 @@ export default function Header() {
         { name: "Home", path: "/" },
         { name: "Explore", path: "/explore" },
         { name: "Feed", path: "/feed" },
-        { name: "Library", path: "/library" },
     ];
 
     const toggleMenu = () => {
@@ -105,9 +104,12 @@ export default function Header() {
                             <button className="text-base font-semibold hover:text-gray-300 transition">
                                 For Artists
                             </button>
-                            <button className="text-base font-semibold hover:text-gray-300 transition">
+                            <Link
+                                href="/upload"
+                                className="text-base font-semibold hover:text-gray-300 transition"
+                            >
                                 Upload
-                            </button>
+                            </Link>
 
                             <div className="relative">
                                 <button
