@@ -3,6 +3,7 @@ import { JWT } from "next-auth/jwt"
 import CredentialsProvider from "next-auth/providers/credentials"
 import jwt from "jsonwebtoken"
 
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export const authOptions: NextAuthOptions = {
@@ -22,7 +23,8 @@ export const authOptions: NextAuthOptions = {
                     return null
                 }
 
-                process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0" // so that request will be allowed to fetch data from localhost (cuz next.js HTTPS with self-signed certificate)
+                // for localhost (если это необходимо)
+                process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
                 console.log("Login credentials:", credentials.email, credentials.password)
                 const res = await fetch(`${apiUrl}/Auth/login`, {
@@ -54,6 +56,7 @@ export const authOptions: NextAuthOptions = {
                         role: string
                         email: string
                         name?: string
+                        image?: string
                     }
 
                     return {
@@ -61,9 +64,11 @@ export const authOptions: NextAuthOptions = {
                         role: decoded.role,
                         email: decoded.email,
                         name: decoded.name,
+                        image: decoded.image,
                         accessToken: data.token,
-                    }
-                } catch {
+                    } as User
+                } catch (e) {
+                    console.error("JWT verification failed:", e);
                     return null
                 }
             },
@@ -76,6 +81,8 @@ export const authOptions: NextAuthOptions = {
                 token.id = user.id
                 token.role = user.role
                 token.email = user.email
+                token.name = user.name
+                token.image = user.image
                 token.accessToken = user.accessToken
             }
             return token
@@ -92,6 +99,8 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string
                 session.user.role = token.role as string
                 session.user.email = token.email as string
+                session.user.name = token.name as string | undefined
+                session.user.image = token.image as string | undefined
                 session.user.accessToken = token.accessToken
             }
             return session

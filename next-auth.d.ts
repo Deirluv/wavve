@@ -1,4 +1,5 @@
 import NextAuth from "next-auth"
+import { JWT } from "next-auth/jwt"
 
 declare module "next-auth" {
     interface Session {
@@ -7,7 +8,8 @@ declare module "next-auth" {
             role: string
             accessToken?: string
             email: string
-            name?: string
+            name?: string | null
+            image?: string | null
         }
     }
 
@@ -16,6 +18,7 @@ declare module "next-auth" {
         role: string
         email: string
         accessToken?: string
+        image?: string | null
     }
 }
 
@@ -24,5 +27,8 @@ declare module "next-auth/jwt" {
         id: string
         role: string
         accessToken?: string
+        image?: string | null
+        name?: string | null
+        email: string
     }
 }

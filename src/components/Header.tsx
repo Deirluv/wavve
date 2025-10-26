@@ -1,3 +1,4 @@
+// components/Header.tsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -6,12 +7,28 @@ import SearchBar from "./SearchBar";
 import Image from "next/image";
 import { User, Heart, List, Music } from "lucide-react";
 import { createPortal } from "react-dom";
+// 👈 ИМПОРТ ИЗМЕНЕН: используем useSession и signOut
+import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
     const pathname = usePathname();
     const router = useRouter();
 
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // 🚀 НОВАЯ ЛОГИКА АВТОРИЗАЦИИ: используем useSession()
+    const { data: session, status } = useSession();
+    const isAuthenticated = status === 'authenticated';
+    const isLoading = status === 'loading';
+    // ----------------------------------------------------
+
+    // Удалены:
+    // const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // useEffect(() => {
+    //     const token = localStorage.getItem("auth_token");
+    //     setIsAuthenticated(!!token);
+    //     setIsAuthenticated(false); // Заменено на логику useSession
+    // }, []);
+
+
     const [menuOpen, setMenuOpen] = useState(false);
     const menuButtonRef = useRef<HTMLButtonElement | null>(null); // avatar
     const menuContainerRef = useRef<HTMLDivElement | null>(null); // portal menu
@@ -19,12 +36,6 @@ export default function Header() {
         top: 0,
         left: 0,
     });
-
-    useEffect(() => {
-        const token = localStorage.getItem("auth_token");
-        setIsAuthenticated(!!token);
-        setIsAuthenticated(false);
-    }, []);
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
@@ -61,6 +72,23 @@ export default function Header() {
         setMenuOpen((prev) => !prev);
     };
 
+    // ⚠️ Добавлено: Отображение заглушки во время загрузки сессии
+    if (isLoading) {
+        return (
+            <header className="bg-black relative z-10">
+                <div className="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center space-x-6">
+                        <Image src="/logo.svg" alt="Logo" width={24} height={24} className="h-6 w-auto" />
+                        <div className="ml-1 w-[350px]">
+                            <SearchBar />
+                        </div>
+                    </div>
+                    <div className="text-gray-400">Loading user info...</div>
+                </div>
+            </header>
+        );
+    }
+
     return (
         <header className="bg-black relative z-10">
             <div className="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-start">
@@ -96,6 +124,7 @@ export default function Header() {
                 </div>
 
                 <div className="flex items-center space-x-8 ml-10">
+                    {/* 🚀 ИСПОЛЬЗУЕМ isAuthenticated ИЗ useSession() */}
                     {isAuthenticated ? (
                         <>
                             <button className="text-base font-semibold hover:text-purple-400 transition">
@@ -117,8 +146,9 @@ export default function Header() {
                                     onClick={toggleMenu}
                                     className="w-10 h-10 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center hover:bg-gray-600"
                                 >
+                                    {/* Можно использовать session.user.image, если он есть */}
                                     <Image
-                                        src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw7n9x9XbO-qBaZc1-kB0ShF1o8XFiQdtzlU3oyEpuDG--ElM0Aus7mwqo78ilVxjHi9U&usqp=CAU"
+                                        src={session?.user?.image || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw7n9x9XbO-qBaZc1-kB0ShF1o8XFiQdtzlU3oyEpuDG--ElM0Aus7mwqo78ilVxjHi9U&usqp=CAU"}
                                         alt="Avatar"
                                         width={40}
                                         height={40}
@@ -182,6 +212,18 @@ export default function Header() {
                                                     <Music strokeWidth={2} />
                                                     Tracks
                                                 </button>
+
+                                                {/* 🚀 Добавлено: Кнопка выхода с использованием signOut() */}
+                                                <div className="border-t border-gray-700 my-2"></div>
+                                                <button
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        signOut({ callbackUrl: '/' }); // Выход и перенаправление на главную
+                                                    }}
+                                                    className="px-4 py-2 text-sm text-red-400 hover:bg-neutral-800 w-full text-left"
+                                                >
+                                                    Sign Out
+                                                </button>
                                             </div>
                                         </div>,
                                         document.body
@@ -190,6 +232,7 @@ export default function Header() {
                         </>
                     ) : (
                         <>
+                            {/* 🚀 ДЛЯ НЕАВТОРИЗОВАННОГО */}
                             <Link
                                 href="/login"
                                 className="text-base font-semibold hover:text-purple-400 transition"

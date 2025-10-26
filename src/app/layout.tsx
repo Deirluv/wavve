@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Player from "@/components/Player";
+
+import AuthProvider from "@/app/providers";
 
 const montserrat = Montserrat({
     subsets: ["latin"],
@@ -24,14 +27,16 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" className={montserrat.className}>
-            <body className="font-sans antialiased">
-                <div className="min-h-screen bg-black text-white">
-                    <Header />
-                    {children}
-                    <Footer />
-                    <Player />
-                </div>
-            </body>
+        <body className="font-sans antialiased">
+        <AuthProvider>
+            <div className="min-h-screen bg-black text-white">
+                <Header />
+                {children}
+                <Footer />
+                <Player />
+            </div>
+        </AuthProvider>
+        </body>
         </html>
     );
 }

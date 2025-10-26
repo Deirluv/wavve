@@ -2,8 +2,12 @@
 import { usePlayerStore } from '@/store/Player'
 import Image from 'next/image'
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Heart, Volume2, List} from 'lucide-react'
+import { useSession } from 'next-auth/react'
 
 export default function Player() {
+
+    const { status } = useSession();
+
     const {
         currentTrack,
         isPlaying,
@@ -13,7 +17,12 @@ export default function Player() {
     } = usePlayerStore()
 
 
-    if (!currentTrack) return null
+    const isAuthenticated = status === 'authenticated';
+    const isLoading = status === 'loading';
+
+    if (isLoading || !isAuthenticated || !currentTrack) {
+        return null
+    }
 
     // To check so we're not diving by zero
     const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0
