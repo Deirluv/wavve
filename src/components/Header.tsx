@@ -148,7 +148,7 @@ export default function Header() {
                                 >
                                     {/* Можно использовать session.user.image, если он есть */}
                                     <Image
-                                        src={session?.user?.image || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw7n9x9XbO-qBaZc1-kB0ShF1o8XFiQdtzlU3oyEpuDG--ElM0Aus7mwqo78ilVxjHi9U&usqp=CAU"}
+                                        src={session?.user?.image || "https://www.svgrepo.com/show/452030/avatar-default.svg"}
                                         alt="Avatar"
                                         width={40}
                                         height={40}
