@@ -20,7 +20,7 @@ const genres = [
     { name: "J-Pop", image: "https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2023/04/Fuji-Kaze-1-1.jpg?resize=620%2C411&ssl=1" },
     { name: "Punk", image: "https://cdn.britannica.com/52/23152-050-08E3FD92/Ramones.jpg" },
     { name: "Funk & Disco", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/James-Brown_1973.jpg/960px-James-Brown_1973.jpg" },
-    { name: "Afro", image: "https://www.okayafrica.com/media-library/tyla-poses-for-a-photo-with-her-best-afrobeats-award-at-the-mtv-video-music-awards-2024-held-at-the-ubs-arena-in-new-york-on-wed.png?id=53618693&width=1245&height=700&quality=80&coordinates=0%2C27%2C0%2C859" },
+    { name: "Afro", image: "https://dailymusicroll.s3.us-west-2.amazonaws.com/wp-content/uploads/2024/04/05114921/african-percussion%402x.jpg" },
     { name: "Classical", image: "https://aze.media/wp-content/uploads/2021/10/Classical-Music-Wallpaper-e1633331488947.jpeg" },
 ];
 

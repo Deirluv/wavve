@@ -1,4 +1,3 @@
-// components/Header.tsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -7,26 +6,15 @@ import SearchBar from "./SearchBar";
 import Image from "next/image";
 import { User, Heart, List, Music } from "lucide-react";
 import { createPortal } from "react-dom";
-// 👈 ИМПОРТ ИЗМЕНЕН: используем useSession и signOut
 import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
     const pathname = usePathname();
     const router = useRouter();
 
-    // 🚀 НОВАЯ ЛОГИКА АВТОРИЗАЦИИ: используем useSession()
     const { data: session, status } = useSession();
     const isAuthenticated = status === 'authenticated';
     const isLoading = status === 'loading';
-    // ----------------------------------------------------
-
-    // Удалены:
-    // const [isAuthenticated, setIsAuthenticated] = useState(false);
-    // useEffect(() => {
-    //     const token = localStorage.getItem("auth_token");
-    //     setIsAuthenticated(!!token);
-    //     setIsAuthenticated(false); // Заменено на логику useSession
-    // }, []);
 
 
     const [menuOpen, setMenuOpen] = useState(false);
@@ -72,10 +60,9 @@ export default function Header() {
         setMenuOpen((prev) => !prev);
     };
 
-    // ⚠️ Добавлено: Отображение заглушки во время загрузки сессии
     if (isLoading) {
         return (
-            <header className="bg-black relative z-10">
+            <header className="relative z-10">
                 <div className="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center space-x-6">
                         <Image src="/logo.svg" alt="Logo" width={24} height={24} className="h-6 w-auto" />
@@ -90,7 +77,7 @@ export default function Header() {
     }
 
     return (
-        <header className="bg-black relative z-10">
+        <header className="relative z-10">
             <div className="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-start">
                 <div className="flex items-center space-x-6">
                     <Image
@@ -118,13 +105,12 @@ export default function Header() {
                         ))}
                     </nav>
 
-                    <div className="ml-1 w-[350px]">
+                    <div className={`ml-1 ${isAuthenticated ? 'w-[350px]' : 'w-[450px] md:w-[450px]'}`}>
                         <SearchBar />
                     </div>
                 </div>
 
                 <div className="flex items-center space-x-8 ml-10">
-                    {/* 🚀 ИСПОЛЬЗУЕМ isAuthenticated ИЗ useSession() */}
                     {isAuthenticated ? (
                         <>
                             <button className="text-base font-semibold hover:text-purple-400 transition">
@@ -146,7 +132,7 @@ export default function Header() {
                                     onClick={toggleMenu}
                                     className="w-10 h-10 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center hover:bg-gray-600"
                                 >
-                                    {/* Можно использовать session.user.image, если он есть */}
+                                    {/* Use image session.user.image, if it exists */}
                                     <Image
                                         src={session?.user?.image || "https://www.svgrepo.com/show/452030/avatar-default.svg"}
                                         alt="Avatar"
@@ -213,12 +199,11 @@ export default function Header() {
                                                     Tracks
                                                 </button>
 
-                                                {/* 🚀 Добавлено: Кнопка выхода с использованием signOut() */}
                                                 <div className="border-t border-gray-700 my-2"></div>
                                                 <button
                                                     onClick={() => {
                                                         setMenuOpen(false);
-                                                        signOut({ callbackUrl: '/' }); // Выход и перенаправление на главную
+                                                        signOut({ callbackUrl: '/' });
                                                     }}
                                                     className="px-4 py-2 text-sm text-red-400 hover:bg-neutral-800 w-full text-left"
                                                 >
@@ -232,10 +217,9 @@ export default function Header() {
                         </>
                     ) : (
                         <>
-                            {/* 🚀 ДЛЯ НЕАВТОРИЗОВАННОГО */}
                             <Link
                                 href="/login"
-                                className="text-base font-semibold hover:text-purple-400 transition"
+                                className="ml-8 text-base font-semibold hover:text-purple-400 transition"
                             >
                                 Sign In
                             </Link>

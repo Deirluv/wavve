@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
                 protocol: 'https',
                 hostname: 'images.squarespace-cdn.com',
             },
+            {
+                protocol: 'https',
+                hostname: 'i.ytimg.com',
+            },
+            {
+                protocol: 'https',
+                hostname: 'cdn-images.dzcdn.net',
+            },
         ],
     },
 };

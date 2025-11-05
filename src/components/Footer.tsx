@@ -38,12 +38,12 @@ export default function Header(){
                     <div className="flex space-x-4">
                         <a href="#" className="flex items-center">
                             <img
-                                src="https://play.google.com/intl/en_us/badges/images/generic/google_play_badge_web_generic.png"
+                                src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Google_Play_Store_badge_EN.svg/1200px-Google_Play_Store_badge_EN.svg.png"
                                 alt="Google Play" className="h-8"/>
                         </a>
                         <a href="#" className="flex items-center">
                             <img
-                                src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Apple_App_Store.svg/1200px-Apple_App_Store.svg.png"
+                                src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Download_on_the_App_Store_Badge.svg/2560px-Download_on_the_App_Store_Badge.svg.png"
                                 alt="App Store" className="h-8"/>
                         </a>
                     </div>

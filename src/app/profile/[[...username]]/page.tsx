@@ -174,7 +174,7 @@ export default function ProfilePage() {
     const isMyProfile = currentUser === profileData.username;
 
     return (
-        <div className="min-h-screen bg-black flex justify-center">
+        <div className="min-h-screen flex justify-center">
             <div className="w-full max-w-7xl bg-sc-background min-h-screen text-white shadow-2xl">
 
                 {/* Header (Banner and user info) */}
