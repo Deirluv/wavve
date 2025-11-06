@@ -17,13 +17,13 @@ export async function GET(
     const userId = params.id;
 
     try {
-        // 1. Формируем заголовки с токеном
+        // 1. Creating headers
         const headers = {
             'Authorization': `Bearer ${session.accessToken}`,
             'Content-Type': 'application/json',
         };
 
-        // 2. Запрос к ВАШЕМУ ВНЕШНЕМУ API
+        // 2. API
         const externalResponse = await fetch(`${apiUrl}/Users/${userId}`, {
             method: 'GET',
             headers: headers,
@@ -31,7 +31,6 @@ export async function GET(
         });
 
         if (!externalResponse.ok) {
-            // Если внешний API вернул ошибку (напр., 404)
             return NextResponse.json(
                 { message: `External API Error: ${externalResponse.statusText}` },
                 { status: externalResponse.status }
@@ -40,7 +39,6 @@ export async function GET(
 
         const data = await externalResponse.json();
 
-        // 3. Возвращаем данные обратно клиенту (Route Handler)
         return NextResponse.json(data, { status: 200 });
 
     } catch (error) {
