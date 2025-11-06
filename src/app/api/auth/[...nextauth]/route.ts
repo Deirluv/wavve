@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
                     return null
                 }
 
-                // for localhost (если это необходимо)
+                // for localhost (if needed)
                 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
                 console.log("Login credentials:", credentials.email, credentials.password)

@@ -11,5 +11,5 @@ export default withAuth({
 })
 
 export const config = {
-    matcher: ["/profile", "/likes", "/playlists", "/tracks", "/feed", "/search", "/upload", ], // "/profile" не забывать вернуть
+    matcher: ["/profile/:path*", "/likes", "/playlists", "/tracks", "/feed", "/search", "/upload", ], // "/profile" не забывать вернуть
 }
