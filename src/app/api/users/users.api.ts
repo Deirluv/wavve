@@ -24,7 +24,7 @@ interface PlaylistApiDto {
     CreatedAt: string;
     UserName: string;
     TrackCount: number;
-    // Tracks: TrackApiDto[];
+    // Tracks?: TrackApiDto[];
 }
 
 export interface UserProfileApiDto {
@@ -36,20 +36,25 @@ export interface UserProfileApiDto {
     followingsCount: number;
     playlists: PlaylistApiDto[];
     tracks: TrackApiDto[];
-    // likes followings later
+    // likes, followings — позже можно добавить
 }
 
-export async function getUserProfileData(id: string): Promise<UserProfileApiDto> {
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    const url = `/api/profile/${id}`;
+export async function getUserProfileData(id: string): Promise<UserProfileApiDto> {
+    const url = `${apiUrl}/Users/${id}`;
 
     const response = await fetch(url, {
         method: 'GET',
+        credentials: 'include',
+        headers: {
+            'Accept': 'application/json',
+        },
         cache: 'no-store',
     });
 
     if (response.status === 401) {
-        throw new Error("Unauthorized");
+        throw new Error('Unauthorized');
     }
 
     if (response.status === 404) {
@@ -65,5 +70,6 @@ export async function getUserProfileData(id: string): Promise<UserProfileApiDto>
         }
     }
 
-    return response.json();
+    const data = await response.json();
+    return data as UserProfileApiDto;
 }

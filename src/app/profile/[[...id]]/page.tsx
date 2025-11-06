@@ -105,7 +105,7 @@ export default function ProfilePage() {
         if (!profileIdToLoad || profileIdToLoad === "loading") {
             if (status === 'unauthenticated' && !userIdInUrl) {
                 setIsLoading(false);
-                setError("Пожалуйста, войдите, чтобы просмотреть свой профиль.");
+                setError("Please, authorize to see the profiles data.");
             }
             return;
         }
@@ -120,8 +120,8 @@ export default function ProfilePage() {
                 setProfileData(apiData);
 
             } catch (err) {
-                console.error("Ошибка при загрузке профиля:", err);
-                setError((err as Error).message || "Произошла неизвестная ошибка при загрузке данных.");
+                console.error("Loading data error:", err);
+                setError((err as Error).message || "An unknown error occurred while fetching data.");
                 setProfileData(null);
             } finally {
                 setIsLoading(false);
@@ -137,7 +137,49 @@ export default function ProfilePage() {
     }
 
     if (error) {
-        return <div className={`text-center mt-10 text-red-500`}>Error: {error}</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-sc-background text-white">
+                <div className={`max-w-md w-full ${CARD_BG_CLASS} border ${BORDER_COLOR_CLASS} rounded-2xl p-8 text-center shadow-2xl`}>
+                    <div className="flex justify-center mb-4">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="w-14 h-14 text-red-400"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 9v3.75m0 3.75h.008v.008H12V16.5zm0 6.75a9.75 9.75 0 1 0 0-19.5 9.75 9.75 0 0 0 0 19.5z"
+                            />
+                        </svg>
+                    </div>
+
+                    <h2 className="text-2xl font-bold mb-2 text-white">Error loading data</h2>
+                    <p className={`${SECONDARY_TEXT_CLASS} mb-6`}>
+                        {error || "Can't get user's data. Please try again later."}
+                    </p>
+
+                    <div className="flex flex-col space-y-3">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className={`w-full px-4 py-2 bg-sc-accent text-white rounded-full font-semibold hover:opacity-80 transition duration-150`}
+                        >
+                            Try again
+                        </button>
+
+                        <button
+                            onClick={() => window.history.back()}
+                            className={`w-full px-4 py-2 border ${BORDER_COLOR_CLASS} ${ICON_COLOR_CLASS} rounded-full hover:${ACCENT_COLOR_CLASS} hover:border-sc-accent transition duration-150`}
+                        >
+                            Back
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (!profileData) {
