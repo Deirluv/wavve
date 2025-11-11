@@ -1,38 +1,54 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
-import { UploadCloud, Mic, X, ChevronDown, Check, AlertTriangle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { UploadCloud, Mic, X, ChevronDown, Check, AlertTriangle, Disc } from 'lucide-react';
 
-// Styles
+import { uploadTrack, TrackApiDto } from '@/app/api/tracks/tracks.api';
+
 const STYLES = {
-    ACCENT_BG: { backgroundColor: 'var(--color-sc-accent)' },     // #954BFF
-    ACCENT_COLOR: { color: 'var(--color-sc-accent)' },             // #954BFF
-    TEXT_COLOR: { color: 'var(--color-sc-text)' },                 // #FFFFFF
-    SECONDARY_COLOR: { color: 'var(--color-sc-secondary)' },      // #C4C4C4
-    TERTIARY_COLOR: { color: 'var(--color-sc-tertiary)' },         // #888888
-    CARD_BG: { backgroundColor: 'var(--color-sc-card-bg)' },       // #1e1e1e
-    BORDER_SECONDARY: { borderColor: 'var(--color-sc-secondary)' },// #C4C4C4
+    ACCENT_BG: { backgroundColor: 'var(--color-sc-accent)' },
+    ACCENT_COLOR: { color: 'var(--color-sc-accent)' },
+    TEXT_COLOR: { color: 'var(--color-sc-text)' },
+    SECONDARY_COLOR: { color: 'var(--color-sc-secondary)' },
+    TERTIARY_COLOR: { color: 'var(--color-sc-tertiary)' },
+    CARD_BG: { backgroundColor: 'var(--color-sc-card-bg)' },
+    BORDER_SECONDARY: { borderColor: 'var(--color-sc-secondary)' },
 };
 
-// --- Component uploading/recording ---
-const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordToggle, isRecording, fileInputRef }) => {
+interface UploadStateProps {
+    fileName: string | null;
+    status: 'idle' | 'recording' | 'file_selected' | 'metadata_submitted' | 'uploading' | 'error';
+    onRemoveFile: () => void;
+    onUploadFile: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onRecordToggle: () => Promise<void>;
+    isRecording: boolean;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
+    recordingTime: number;
+    micError: string | null;
+}
 
-    // Dictophone style
-    const micButtonStyles = isRecording
-        ? { backgroundColor: '#FF0000', animation: 'pulse 1.5s infinite' }
-        : { ...STYLES.CARD_BG, color: 'var(--color-sc-text)' };
+interface FormSubmissionData {
+    title: string;
+    description: string;
+    genreId: string;
+    previewFile: File | null;
+}
 
-    // Icons Dictophone
-    const micIconClass = isRecording
-        ? 'w-6 h-6 text-white'
-        : 'w-6 h-6';
+interface MetadataFormProps {
+    fileName: string | null;
+    onSubmit: (data: FormSubmissionData) => Promise<void> | void;
+    onRemoveFile: () => void;
+}
+
+// Component uploading and recording
+const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordToggle, isRecording, fileInputRef, recordingTime, micError } : UploadStateProps) => {
 
     return (
         <div className="space-y-6">
             {/* File uploading */}
             <div
                 className="p-12 border-2 border-dashed flex flex-col items-center rounded-lg"
-                style={{ ...STYLES.BACKGROUND, ...STYLES.BORDER_SECONDARY }}
+                style={{ ...STYLES.BORDER_SECONDARY, backgroundColor: 'transparent' }}
             >
                 {/* File chosen */}
                 {fileName && status !== 'recording' ? (
@@ -48,8 +64,8 @@ const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordTog
                 ) : (
                     // File choosing
                     <>
-                        <UploadCloud className="w-12 h-12 mb-4" style={STYLES.ACCENT_COLOR}/>
-                        <p style={STYLES.TERTIARY_COLOR}>Drag and drop audio files to get started.</p>
+                        <img src="/upload.png" alt="" className={"scale-80"}/>
+                        <p style={STYLES.TERTIARY_COLOR} className="mt-2">Drag and drop audio files to get started.</p>
 
                         <input
                             type="file"
@@ -61,11 +77,8 @@ const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordTog
                         />
                         <label
                             htmlFor="file-upload"
-                            className="py-2 px-6 rounded-md font-semibold cursor-pointer"
-                            style={{
-                                color: '#000000',
-                                backgroundColor: 'var(--color-sc-text)'
-                            }}
+                            className="mt-4 py-2 px-6 rounded-md font-semibold cursor-pointer text-black"
+                            style={{ backgroundColor: 'var(--color-sc-text)' }}
                         >
                             Choose files
                         </label>
@@ -74,24 +87,22 @@ const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordTog
 
             </div>
 
-            {/* Dictophone */}
+            {/* Dictofon */}
             <div
-                className="w-full p-4 rounded-lg flex items-center justify-between cursor-pointer transition duration-200"
-                style={STYLES.CARD_BG}
+                className="w-full p-4 rounded-lg flex items-center justify-between cursor-pointer transition duration-200 border"
+                style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}
+                onClick={onRecordToggle}
             >
-                <div className="flex items-center space-x-3" onClick={onRecordToggle}>
+                <div className="flex items-center space-x-3">
                     {/* Icon */}
-                    <div
-                        className={`p-1 rounded-full ${isRecording ? 'bg-red-500' : ''}`}
-                        style={isRecording ? {animation: 'pulse 1.5s infinite'} : STYLES.SECONDARY_COLOR}
-                    >
-                        <Mic className={micIconClass} style={isRecording ? {color: 'white'} : STYLES.SECONDARY_COLOR} />
+                    <div className={`p-1 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : ''}`}>
+                        <Mic className='w-6 h-6' style={isRecording ? {color: 'white'} : STYLES.SECONDARY_COLOR} />
                     </div>
 
                     <div className="flex flex-col">
                         <p className="font-semibold" style={STYLES.SECONDARY_COLOR}>
                             Or record with a microphone
-                            {isRecording && <span className="text-red-500 ml-2">(Идет запись...)</span>}
+                            {isRecording && <span className="text-red-500 ml-2">({recordingTime}s recording...)</span>}
                         </p>
                         <p className="text-sm" style={STYLES.TERTIARY_COLOR}>
                             Upload recorded voice memos, updates, news, or intros to new releases
@@ -100,27 +111,61 @@ const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordTog
                 </div>
                 <ChevronDown className="w-5 h-5" style={STYLES.SECONDARY_COLOR} />
             </div>
+
+            {/* Microphone error */}
+            {micError && (
+                <div className="p-3 bg-red-900/50 text-red-400 rounded-lg flex items-center space-x-2 border border-red-700">
+                    <AlertTriangle className="w-5 h-5" />
+                    <p className="text-sm font-medium">{micError}</p>
+                </div>
+            )}
         </div>
     );
 };
 
-// Metadata
-const MetadataForm = ({ fileName, onSubmit, onRemoveFile }) => {
-    const [formData, setFormData] = useState({ title: '', description: '', genre: 'Hip Hop' });
+// Metadata & Form for Submission
+const MetadataForm = ({ fileName, onSubmit, onRemoveFile } : MetadataFormProps) => {
+    // Random id, need to change. Get from server
+    const genreOptions = [
+        { name: 'Hip Hop', id: 'd7a8d7a8-d7a8-4444-b4a8-d7a8d7a8d7a8' },
+        { name: 'Electronic', id: 'e1b9e1b9-e1b9-4444-b4b9-e1b9e1b9e1b9' },
+        { name: 'Rock', id: 'f2c0f2c0-f2c0-4444-b4c0-f2c0f2c0f2c0' },
+        { name: 'Pop', id: 'a3d1a3d1-a3d1-4444-b4d1-a3d1a3d1a3d1' },
+    ];
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        genreId: genreOptions[0].id
+    });
+
+    const [previewFile, setPreviewFile] = useState<File | null>(null);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleGenreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setFormData({ ...formData, genreId: e.target.value });
+    };
+
+    const handlePreviewFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPreviewFile(e.target.files ? e.target.files[0] : null);
+    };
+
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Метаданные отправлены:", formData);
-        onSubmit();
+        // Back to parent component
+        onSubmit({
+            ...formData,
+            previewFile: previewFile
+        });
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <h2 className="text-2xl font-bold" style={STYLES.TEXT_COLOR}>Track info</h2>
+            <h2 className="text-2xl font-bold" style={STYLES.TEXT_COLOR}>Track Info</h2>
 
             {/* File preview */}
             <div className="p-4 rounded-lg border flex items-center justify-between" style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}>
@@ -133,7 +178,7 @@ const MetadataForm = ({ fileName, onSubmit, onRemoveFile }) => {
                 </button>
             </div>
 
-            {/* Form */}
+            {/* Form Fields */}
             <div>
                 <label className="block text-sm font-medium mb-1" style={STYLES.SECONDARY_COLOR}>Title</label>
                 <input
@@ -159,24 +204,38 @@ const MetadataForm = ({ fileName, onSubmit, onRemoveFile }) => {
                 />
             </div>
 
+            {/* Cover Art (Preview File) Input */}
             <div>
-                <label className="block text-sm font-medium mb-1" style={STYLES.SECONDARY_COLOR}>Genres</label>
+                <label className="block text-sm font-medium mb-1" style={STYLES.SECONDARY_COLOR}>Cover Art (Preview)</label>
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePreviewFileChange}
+                    className="w-full p-3 rounded-md border text-white"
+                    style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}
+                />
+                {previewFile && <p className="text-xs text-sc-tertiary mt-1">Selected: {previewFile.name}</p>}
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium mb-1" style={STYLES.SECONDARY_COLOR}>Genre</label>
                 <select
-                    name="genre"
-                    value={formData.genre}
-                    onChange={handleChange}
+                    name="genreId"
+                    value={formData.genreId}
+                    onChange={handleGenreChange}
                     required
                     className="w-full p-3 rounded-md border text-white appearance-none cursor-pointer"
                     style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}
                 >
-                    <option style={STYLES.BACKGROUND} value="Hip Hop">Hip Hop</option>
-                    <option style={STYLES.BACKGROUND} value="Electronic">Electronic</option>
-                    <option style={STYLES.BACKGROUND} value="Rock">Rock</option>
-                    <option style={STYLES.BACKGROUND} value="Pop">Pop</option>
+                    {genreOptions.map(genre => (
+                        <option key={genre.id} value={genre.id}>
+                            {genre.name}
+                        </option>
+                    ))}
                 </select>
             </div>
 
-            {/* Кнопка отправки */}
+            {/* Submission Button */}
             <div className="pt-4">
                 <button
                     type="submit"
@@ -191,86 +250,214 @@ const MetadataForm = ({ fileName, onSubmit, onRemoveFile }) => {
 };
 
 
-// --- ОСНОВНОЙ КОМПОНЕНТ СТРАНИЦЫ ЗАГРУЗКИ ---
 
 export default function UploadPage() {
     const [fileName, setFileName] = useState<string | null>(null);
-    const [uploadStatus, setUploadStatus] = useState<'idle' | 'recording' | 'file_selected' | 'metadata_submitted'>('idle');
+    const [uploadStatus, setUploadStatus] = useState<'idle' | 'recording' | 'file_selected' | 'metadata_submitted' | 'uploading' | 'error'>('idle');
     const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [micError, setMicError] = useState<string | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
+    const [audioFileToSend, setAudioFileToSend] = useState<File | null>(null);
+    const [uploadedTrack, setUploadedTrack] = useState<TrackApiDto | null>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
 
-    // --- Логика Диктофона (Имитация) ---
-    const handleRecordToggle = () => {
-        // Если уже есть выбранный файл, сначала нужно его сбросить
-        if (fileName && !isRecording) {
-            handleRemoveFile();
+    // Stop recording and clean
+    const stopRecording = () => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
         }
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+        }
+        setIsRecording(false);
+        setRecordingTime(0);
+    };
 
-        if (isRecording) {
-            // Остановка записи
-            setIsRecording(false);
-            setUploadStatus('file_selected');
-            setFileName(`Recorded_Audio_Clip_${Date.now()}.mp3`);
-        } else {
-            // Начало записи
-            setIsRecording(true);
-            setUploadStatus('recording');
-            setFileName(null);
+    // Clean stream
+    const cleanupStream = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
         }
     };
 
-    // --- Логика выбора файла ---
+    useEffect(() => {
+        return () => {
+            stopRecording();
+            cleanupStream();
+        };
+    }, []);
+
+
+    // Dictofon
+    const handleRecordToggle = async () => {
+        setMicError(null);
+
+        if (isRecording) {
+            stopRecording();
+        } else {
+            if (fileName) handleRemoveFile();
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                streamRef.current = stream;
+
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorderRef.current = mediaRecorder;
+                audioChunksRef.current = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunksRef.current.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
+                    const audioFile = new File([audioBlob], `Recorded_Audio_Clip_${Date.now()}.mp3`, { type: 'audio/mp3' });
+
+                    setAudioFileToSend(audioFile);
+
+                    setFileName(audioFile.name);
+                    setUploadStatus('file_selected');
+                    cleanupStream();
+                };
+
+                mediaRecorder.start();
+                setIsRecording(true);
+                setUploadStatus('recording');
+
+                setRecordingTime(0);
+                timerRef.current = setInterval(() => {
+                    setRecordingTime(prev => prev + 1);
+                }, 1000);
+
+            } catch (err) {
+                console.error("Microphone access failed:", err);
+                setMicError("Microphone access denied or not found. Please check your browser permissions.");
+                setIsRecording(false);
+                setUploadStatus('idle');
+                cleanupStream();
+            }
+        }
+    };
+
+    // File selectio
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            // Сброс состояния записи
-            if (isRecording) setIsRecording(false);
+            stopRecording();
+            cleanupStream();
+            setMicError(null);
+
+            // Save file
+            setAudioFileToSend(file);
 
             setFileName(file.name);
             setUploadStatus('file_selected');
         }
     };
 
-    // --- Логика удаления файла ---
+    // File removal
     const handleRemoveFile = () => {
         setFileName(null);
         setUploadStatus('idle');
-        setIsRecording(false);
+        stopRecording();
+        cleanupStream();
+        setMicError(null);
+        setUploadError(null);
+        setAudioFileToSend(null); // Reset file
+        setUploadedTrack(null);
         if (fileInputRef.current) {
-            fileInputRef.current.value = ''; // Сброс поля ввода файла
+            fileInputRef.current.value = '';
         }
     };
 
-    // --- Логика отправки формы метаданных ---
-    const handleMetadataSubmit = () => {
-        setUploadStatus('metadata_submitted');
-        alert(`Трек "${fileName}" успешно опубликован!`);
-        // В реальном приложении: навигация на страницу трека
-        handleRemoveFile(); // Сброс для следующей загрузки
+    // Metadata submission
+    const handleMetadataSubmit = async (metadata: {
+        title: string,
+        description: string,
+        genreId: string,
+        previewFile: File | null
+    }) => {
+        if (!audioFileToSend) {
+            setUploadError("Audio file is missing.");
+            setUploadStatus('error');
+            return;
+        }
+
+        const formData = new FormData();
+
+        // Forming data
+        formData.append("Title", metadata.title);
+        formData.append("Description", metadata.description);
+        formData.append("Duration", recordingTime.toString());
+        formData.append("GenreId", metadata.genreId);
+
+        formData.append("File", audioFileToSend, audioFileToSend.name);
+
+        if (metadata.previewFile) {
+            formData.append("Preview", metadata.previewFile, metadata.previewFile.name);
+        } else {
+            setUploadError("Cover Art (Preview) is required.");
+            setUploadStatus('error');
+            return;
+        }
+
+
+        setUploadStatus('uploading');
+        setUploadError(null);
+
+        try {
+            // Api
+            const result = await uploadTrack(formData);
+            setUploadedTrack(result);
+            setUploadStatus('metadata_submitted');
+        } catch (err) {
+            const errorMessage = (err as Error).message || "An unknown error occurred during upload.";
+            setUploadError(errorMessage);
+            setUploadStatus('error');
+            console.error(err);
+        }
     };
 
 
     return (
-        <div className="min-h-screen bg-black flex justify-center p-6 md:p-10">
+        <div className="min-h-screen flex justify-center p-6 md:p-10" style={{ backgroundColor: 'transparent' }}>
             <div
                 className="w-full max-w-4xl min-h-full p-8 md:p-12 rounded-lg shadow-2xl"
-                style={STYLES.BACKGROUND} // Фон #121212
+                style={{ backgroundColor: 'transparent' }}
             >
                 <h1 className="text-3xl font-bold mb-8" style={STYLES.TEXT_COLOR}>
-                    {uploadStatus === 'metadata_submitted' ? 'Uploading done' : 'Upload track'}
+                    {uploadStatus === 'metadata_submitted' ? 'Upload Complete' :
+                        uploadStatus === 'uploading' ? 'Uploading...' :
+                            'Upload Track'}
                 </h1>
 
-                {/* Сообщение о качестве */}
+                {/* Quality Message */}
                 <p className="text-sm mb-8" style={{ ...STYLES.SECONDARY_COLOR, color: 'var(--color-sc-secondary)' }}>
                     For best quality, use WAV, FLAC, AIFF, or ALAC. The maximum file size is 4GB uncompressed.
                     <a href="#" style={STYLES.ACCENT_COLOR} className="ml-1">Learn more</a>
                 </p>
 
-                {/* Главный блок контента */}
+                {/* Main Content Block */}
                 <div className="w-full">
+                    {/* Display Error Message */}
+                    {uploadStatus === 'error' && uploadError && (
+                        <div className="p-3 bg-red-900/50 text-red-400 rounded-lg flex items-center space-x-2 border border-red-700 mb-6">
+                            <AlertTriangle className="w-5 h-5" />
+                            <p className="text-sm font-medium">Upload Failed: {uploadError}</p>
+                        </div>
+                    )}
 
-                    {/* СОСТОЯНИЕ 1: ВЫБОР/ЗАПИСЬ */}
-                    {uploadStatus === 'idle' || uploadStatus === 'recording' || uploadStatus === 'file_selected' ? (
+                    {/* select record error */}
+                    {(uploadStatus === 'idle' || uploadStatus === 'recording' || uploadStatus === 'file_selected' || uploadStatus === 'error') && uploadStatus !== 'metadata_submitted' && uploadStatus !== 'uploading' ? (
                         <UploadState
                             fileName={fileName}
                             status={uploadStatus}
@@ -279,10 +466,12 @@ export default function UploadPage() {
                             onRecordToggle={handleRecordToggle}
                             isRecording={isRecording}
                             fileInputRef={fileInputRef}
+                            recordingTime={recordingTime}
+                            micError={micError}
                         />
                     ) : null}
 
-                    {/* СОСТОЯНИЕ 2: ФОРМА МЕТАДАННЫХ (Появляется после выбора файла) */}
+                    {/* metadata after file select or record */}
                     {uploadStatus === 'file_selected' && fileName && !isRecording && (
                         <MetadataForm
                             fileName={fileName}
@@ -291,12 +480,21 @@ export default function UploadPage() {
                         />
                     )}
 
-                    {/* СОСТОЯНИЕ 3: Успешная отправка (Просто заглушка) */}
-                    {uploadStatus === 'metadata_submitted' && (
-                        <div className="p-8 text-center rounded-lg" style={STYLES.CARD_BG}>
+                    {/* upload */}
+                    {uploadStatus === 'uploading' && (
+                        <div className="p-8 text-center rounded-lg border" style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}>
+                            <Disc className="w-16 h-16 mx-auto mb-4 animate-spin" style={STYLES.ACCENT_COLOR} />
+                            <h2 className="text-2xl font-bold" style={STYLES.TEXT_COLOR}>Uploading Track...</h2>
+                            <p className="mt-2" style={STYLES.SECONDARY_COLOR}>Please wait, this may take a moment.</p>
+                        </div>
+                    )}
+
+                    {/* submit good */}
+                    {uploadStatus === 'metadata_submitted' && uploadedTrack && (
+                        <div className="p-8 text-center rounded-lg border" style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}>
                             <Check className="w-16 h-16 mx-auto mb-4" style={STYLES.ACCENT_COLOR} />
-                            <h2 className="text-2xl font-bold" style={STYLES.TEXT_COLOR}>Трек успешно опубликован!</h2>
-                            <p className="mt-2" style={STYLES.SECONDARY_COLOR}>Ваш трек теперь доступен слушателям.</p>
+                            <h2 className="text-2xl font-bold" style={STYLES.TEXT_COLOR}>Track Successfully Published!</h2>
+                            <p className="mt-2" style={STYLES.SECONDARY_COLOR}>Track **{uploadedTrack.Title}** is now available to listeners.</p>
                             <button
                                 onClick={handleRemoveFile}
                                 className="mt-6 py-2 px-4 rounded-md font-semibold text-white"
