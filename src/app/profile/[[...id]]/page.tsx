@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getUserProfileData, UserProfileApiDto } from "@/app/api/users/users.api";
-import { Share2, Edit, Play, Heart, Users, Music, List, Link } from 'lucide-react';
+import { Share2, Edit, Play} from 'lucide-react';
+import { FacebookShareButton, TwitterShareButton, TelegramShareButton } from "next-share";
+import { useRouter } from "next/navigation";
 
 const ACCENT_COLOR_CLASS = "text-sc-accent";
 const SECONDARY_TEXT_CLASS = "text-sc-tertiary";
@@ -95,6 +97,9 @@ export default function ProfilePage() {
         { name: "Billie Eilish", followers: "3.06M" },
         { name: "The Chainsmokers", followers: "4.5M" },
     ]);
+
+    const router = useRouter();
+    const [showShare, setShowShare] = useState(false);
 
 
     useEffect(() => {
@@ -206,9 +211,13 @@ export default function ProfilePage() {
                         {/* Pfp */}
                         <div className="relative -mt-10 flex-shrink-0">
                             <img
-                                src={profileData.avatarUrl || TEST_IMAGES.PROFILE}
+                                src={
+                                    profileData.avatarUrl
+                                        ? profileData.avatarUrl
+                                        : "https://www.svgrepo.com/show/452030/avatar-default.svg"
+                                }
                                 alt={profileData.userName}
-                                className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-sc-background"
+                                className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover shadow-lg border-2 border-white"
                             />
                         </div>
 
@@ -221,19 +230,46 @@ export default function ProfilePage() {
 
                         {/* Buttons Share/Edit/Follow */}
                         <div className="flex space-x-3 pb-2">
-                            {/* Share всегда виден */}
-                            <button className={`flex items-center px-4 py-2 text-sm ${CARD_BG_CLASS} border ${BORDER_COLOR_CLASS} ${ICON_COLOR_CLASS} rounded-full hover:bg-white/10 transition duration-150`}>
-                                <Share2 className="w-4 h-4 mr-2" />
-                                Share
-                            </button>
-                            {/* Кнопка EDIT или FOLLOW */}
+                            {/* Share always visible */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowShare(!showShare)}
+                                    className={`flex items-center px-4 py-2 text-sm ${CARD_BG_CLASS} border ${BORDER_COLOR_CLASS} ${ICON_COLOR_CLASS} rounded-full hover:bg-white/10 transition duration-150`}
+                                >
+                                    <Share2 className="w-4 h-4 mr-2" />
+                                    Share
+                                </button>
+
+                                {showShare && (
+                                    <div className="absolute right-0 mt-2 bg-sc-card-bg border border-sc-tertiary/40 rounded-lg shadow-lg p-3 z-50 flex space-x-3">
+                                        <FacebookShareButton url={typeof window !== "undefined" ? window.location.href : ""}>
+                                            <img src="https://www.svgrepo.com/show/299425/facebook.svg" alt="Facebook" className="w-20 h-6" />
+                                        </FacebookShareButton>
+
+                                        <TwitterShareButton url={typeof window !== "undefined" ? window.location.href : ""}>
+                                            <img src="https://www.svgrepo.com/show/183608/twitter.svg" alt="Twitter" className="w-20 h-6" />
+                                        </TwitterShareButton>
+
+                                        <TelegramShareButton url={typeof window !== "undefined" ? window.location.href : ""}>
+                                            <img src="https://www.svgrepo.com/show/354443/telegram.svg" alt="Telegram" className="w-20 h-6" />
+                                        </TelegramShareButton>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Button EDIT or FOLLOW */}
                             {isMyProfile ? (
-                                <button className={`flex items-center px-4 py-2 text-sm ${CARD_BG_CLASS} border ${BORDER_COLOR_CLASS} ${ICON_COLOR_CLASS} rounded-full hover:bg-white/10 transition duration-150`}>
+                                <button
+                                    onClick={() => router.push("/edit")}
+                                    className={`flex items-center px-4 py-2 text-sm ${CARD_BG_CLASS} border ${BORDER_COLOR_CLASS} ${ICON_COLOR_CLASS} rounded-full hover:bg-white/10 transition duration-150`}
+                                >
                                     <Edit className="w-4 h-4 mr-2" />
                                     Edit
                                 </button>
                             ) : (
-                                <button className={`flex items-center px-4 py-2 text-sm bg-sc-accent text-white rounded-full hover:opacity-80 transition duration-150`}>
+                                <button
+                                    className={`flex items-center px-4 py-2 text-sm bg-sc-accent text-white rounded-full hover:opacity-80 transition duration-150`}
+                                >
                                     Follow
                                 </button>
                             )}
@@ -263,7 +299,7 @@ export default function ProfilePage() {
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-white/70">Нет недавно загруженных треков.</p>
+                                <p className="text-white/70">No recently uploaded tracks.</p>
                             )}
                         </section>
 
@@ -281,7 +317,7 @@ export default function ProfilePage() {
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-white/70">Нет публичных плейлистов.</p>
+                                <p className="text-white/70">No public playlists.</p>
                             )}
                         </section>
                     </div>

@@ -39,6 +39,12 @@ export interface UserProfileApiDto {
     // likes, followings — позже можно добавить
 }
 
+export interface UpdateUserProfileDto {
+    userName: string;
+    bio: string;
+    avatarUrl: string;
+}
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getUserProfileData(id: string): Promise<UserProfileApiDto> {
@@ -72,4 +78,25 @@ export async function getUserProfileData(id: string): Promise<UserProfileApiDto>
 
     const data = await response.json();
     return data as UserProfileApiDto;
+}
+
+export async function updateUserProfile(id: string, data: FormData): Promise<UserProfileApiDto> {
+    const url = `${apiUrl}/Users/${id}`;
+
+    const response = await fetch(url, {
+        method: 'PUT',
+        credentials: 'include',
+        // The browser will automatically set the correct multipart/form-data header
+        headers: {
+            'Accept': 'application/json',
+        },
+        body: data,
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error updating profile (${response.status}): ${errorText}`);
+    }
+
+    return await response.json();
 }
