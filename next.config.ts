@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
                 protocol: 'https',
                 hostname: 'cdn-images.dzcdn.net',
             },
+            {
+                protocol: 'https',
+                hostname: 'wavve.blob.core.windows.net',
+            },
         ],
     },
 };

@@ -80,7 +80,7 @@ export async function getUserProfileData(id: string): Promise<UserProfileApiDto>
     return data as UserProfileApiDto;
 }
 
-export async function updateUserProfile(id: string, data: FormData): Promise<UserProfileApiDto> {
+export async function updateUserProfile(id: string, data: FormData): Promise<UserProfileApiDto | null>  {
     const url = `${apiUrl}/Users/${id}`;
 
     const response = await fetch(url, {
@@ -98,5 +98,54 @@ export async function updateUserProfile(id: string, data: FormData): Promise<Use
         throw new Error(`Error updating profile (${response.status}): ${errorText}`);
     }
 
+    if (response.status === 204) {
+        return null;
+    }
+
     return await response.json();
+}
+
+export async function followUser(targetUserId: string, token: string): Promise<void> {
+    const url = `${apiUrl}/Users/${targetUserId}/follow`;
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+        // Тело не требуется
+    });
+
+    if (response.status === 401) {
+        throw new Error('Unauthorized. Please log in again.');
+    }
+
+    // API возвращает 200 Success с пустым телом, поэтому не парсим JSON
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error following user (${response.status}): ${errorText}`);
+    }
+}
+
+// ⬇️ НОВАЯ ФУНКЦИЯ: Отписка от пользователя
+export async function unfollowUser(targetUserId: string, token: string): Promise<void> {
+    const url = `${apiUrl}/Users/${targetUserId}/unfollow`;
+
+    const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+        // Тело не требуется
+    });
+
+    if (response.status === 401) {
+        throw new Error('Unauthorized. Please log in again.');
+    }
+
+    // API возвращает 200 Success с пустым телом, поэтому не парсим JSON
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error unfollowing user (${response.status}): ${errorText}`);
+    }
 }

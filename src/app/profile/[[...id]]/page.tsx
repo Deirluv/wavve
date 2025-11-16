@@ -1,10 +1,20 @@
+
+
+
+
+
+
+
+
+
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getUserProfileData, UserProfileApiDto } from "@/app/api/users/users.api";
-import { Share2, Edit, Play} from 'lucide-react';
+import { Share2, Edit, Play, Disc, AlertTriangle } from 'lucide-react';
 import { FacebookShareButton, TwitterShareButton, TelegramShareButton } from "next-share";
 import { useRouter } from "next/navigation";
 
@@ -14,30 +24,36 @@ const CARD_BG_CLASS = "bg-sc-card-bg";
 const BORDER_COLOR_CLASS = "border-sc-tertiary/50";
 const ICON_COLOR_CLASS = "text-sc-secondary";
 
-const TEST_IMAGES = {
-    PROFILE: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw7n9x9XbO-qBaZc1-kB0ShF1o8XFiQdtzlU3oyEpuDG--ElM0Aus7mwqo78ilVxjHi9U&usqp=CAU",
-    RECENT_1: "https://thecircle.de/cdn/shop/articles/sabrina-carpenter-header-1.jpg?v=1726603933",
-    RECENT_2: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2SnQX0dupw_oXQfUC_oeGszGR8W7lVIcDog&s",
-    PLAYLIST_1: "https://image.stern.de/33665872/t/IH/v13/w1440/r1.3333/-/dua-lipa-barbie.jpg",
-    PLAYLIST_2: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQhNr8htJYmdreoSRcqDgOl7SVUs0kaEiPICg&s",
-    LIKE: "https://thecircle.de/cdn/shop/articles/Billie-Eilish-HEADER.jpg?v=1719391383",
-    FOLLOWING: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6sDdZ6oItg8kPZsiSHS7NEuVTRCqrRkm6RA&s",
-};
+// Типы для вкладок
+type ProfileTab = 'all' | 'tracks' | 'playlists';
 
+// --- Функциональные компоненты ---
 
-// Functional components
-const RecentTrackCard = ({ track, imageSrc }) => (
+// Компонент для отображения трека в секции Recent/Tracks
+const TrackCard = ({ track }) => (
+    // Используем PreviewUrl для обложки
     <div className="flex flex-col">
-        <img src={imageSrc} alt={track.Title} className="w-full aspect-square object-cover rounded-md" />
+        <img
+            // Используем PreviewUrl, если доступен, иначе заглушку
+            src={track.PreviewUrl || "https://www.svgrepo.com/show/452030/avatar-default.svg"}
+            alt={track.Title}
+            className="w-full aspect-square object-cover rounded-md"
+        />
         <span className="text-sm font-semibold text-white mt-2 truncate">{track.Title}</span>
         <span className={`text-xs ${SECONDARY_TEXT_CLASS} truncate`}>{track.UserName || 'Unknown Artist'}</span>
     </div>
 );
 
-const PlaylistListItem = ({ playlist, imageSrc }) => (
-    <div className="flex items-center space-x-3">
+// Компонент для отображения плейлиста
+const PlaylistListItem = ({ playlist }) => (
+    <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/5 transition duration-150">
         <div className="w-14 h-14 relative flex-shrink-0">
-            <img src={imageSrc} alt={playlist.Name} className="w-full h-full object-cover rounded-md" />
+            {/* Используем заглушку, пока API не предоставит обложку плейлиста */}
+            <img
+                src={"https://via.placeholder.com/150/1f2937/d1d5db?text=Playlist"}
+                alt={playlist.Name}
+                className="w-full h-full object-cover rounded-md"
+            />
             <Play className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white w-5 h-5 opacity-75 fill-white" />
         </div>
         <div className="flex-grow">
@@ -51,36 +67,9 @@ const PlaylistListItem = ({ playlist, imageSrc }) => (
     </div>
 );
 
-const LikedTrackItem = ({ track, imageSrc }) => (
-    <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/5 transition duration-150">
-        <img src={imageSrc} alt={track.title} className="w-12 h-12 object-cover rounded-md flex-shrink-0" />
-        <div className="flex-grow">
-            <p className="text-sm font-semibold truncate">{track.title}</p>
-            <p className={`text-xs ${SECONDARY_TEXT_CLASS} truncate`}>{track.artist}</p>
-        </div>
-        <div className={SECONDARY_TEXT_CLASS}>
-            &#x22EE;
-        </div>
-    </div>
-);
 
-const FollowingUserItem = ({ user, imageSrc }) => (
-    <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-            <img src={imageSrc} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
-            <div>
-                <p className="text-white font-semibold">{user.name}</p>
-                <p className={`text-xs ${SECONDARY_TEXT_CLASS}`}>{user.followers} followers</p>
-            </div>
-        </div>
-        <button className={`text-xs px-3 py-1 border ${BORDER_COLOR_CLASS} ${ICON_COLOR_CLASS} rounded-full hover:${ACCENT_COLOR_CLASS} hover:border-sc-accent transition duration-150`}>
-            Following
-        </button>
-    </div>
-);
+// --- Основной Компонент ---
 
-
-// Main Component
 export default function ProfilePage() {
     const params = useParams();
     const userIdInUrl = Array.isArray(params?.id) ? params.id[0] : null;
@@ -91,12 +80,7 @@ export default function ProfilePage() {
     const [profileData, setProfileData] = useState<UserProfileApiDto | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    const [likes, setLikes] = useState<any[]>([]);
-    const [following, setFollowing] = useState<any[]>([
-        { name: "Billie Eilish", followers: "3.06M" },
-        { name: "The Chainsmokers", followers: "4.5M" },
-    ]);
+    const [activeTab, setActiveTab] = useState<ProfileTab>('all'); // ⬅️ Состояние для активной вкладки
 
     const router = useRouter();
     const [showShare, setShowShare] = useState(false);
@@ -138,28 +122,22 @@ export default function ProfilePage() {
     }, [userIdInUrl, status, CURRENT_USER_ID]);
 
     if (isLoading || status === 'loading') {
-        return <div className={`text-center mt-10 text-white/70`}>Loading profile...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="flex flex-col items-center">
+                    <Disc className="w-10 h-10 animate-spin text-sc-accent" />
+                    <div className={`text-center mt-4 text-white/70`}>Loading profile...</div>
+                </div>
+            </div>
+        );
     }
 
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-sc-background text-white">
-                <div className={`max-w-md w-full ${CARD_BG_CLASS} border ${BORDER_COLOR_CLASS} rounded-2xl p-8 text-center shadow-2xl`}>
+                <div className={`max-w-md w-full ${CARD_BG_CLASS} border border-red-700/50 rounded-2xl p-8 text-center shadow-2xl`}>
                     <div className="flex justify-center mb-4">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-14 h-14 text-red-400"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 9v3.75m0 3.75h.008v.008H12V16.5zm0 6.75a9.75 9.75 0 1 0 0-19.5 9.75 9.75 0 0 0 0 19.5z"
-                            />
-                        </svg>
+                        <AlertTriangle className="w-14 h-14 text-red-400" />
                     </div>
 
                     <h2 className="text-2xl font-bold mb-2 text-white">Error loading data</h2>
@@ -194,7 +172,20 @@ export default function ProfilePage() {
     const isMyProfile = status === 'authenticated' && CURRENT_USER_ID === profileData.id;
 
     const tracksCount = profileData.tracks?.length ?? 0;
-    const likesCount = 0;
+    // ⬅️ Сортировка по дате загрузки и ограничение до 5 последних
+    const recentTracks = profileData.tracks ?
+        [...profileData.tracks]
+            .sort((a, b) => new Date(b.UploadedAt).getTime() - new Date(a.UploadedAt).getTime())
+            .slice(0, 5)
+        : [];
+    const playlistsCount = profileData.playlists?.length ?? 0;
+
+    const navItems: { label: string, tab: ProfileTab, count?: number }[] = [
+        { label: 'All', tab: 'all' },
+        { label: 'Tracks', tab: 'tracks', count: tracksCount },
+        { label: 'Playlists', tab: 'playlists', count: playlistsCount },
+    ];
+
 
     return (
         <div className="min-h-screen flex justify-center">
@@ -202,14 +193,14 @@ export default function ProfilePage() {
 
                 {/* Header (Banner and user info) */}
                 <header className="relative">
-                    {/* Banner */}
+                    {/* Banner (Удалена фоновая картинка, оставлен простой градиент) */}
                     <div className="w-full h-40 bg-gradient-to-r from-sc-accent/70 to-sc-card-bg/70"></div>
 
                     {/* Container PFP, name and buttons */}
-                    <div className="flex items-end px-6 md:px-10 pb-2">
+                    <div className="flex items-end px-6 md:px-10 pb-2 -mt-10">
 
                         {/* Pfp */}
-                        <div className="relative -mt-10 flex-shrink-0">
+                        <div className="relative flex-shrink-0">
                             <img
                                 src={
                                     profileData.avatarUrl
@@ -224,10 +215,10 @@ export default function ProfilePage() {
                         {/* Name */}
                         <div className="ml-6 flex-grow">
                             <h1 className="text-3xl font-bold">{profileData.userName}</h1>
-                            <p className={`${SECONDARY_TEXT_CLASS} mt-1`}>@{profileData.userName}</p>
-                            {profileData.bio && <p className={`${SECONDARY_TEXT_CLASS} mt-1`}>{profileData.bio}</p>}
+                            <p className={`${SECONDARY_TEXT_CLASS} mt-1`}>{profileData.bio || 'Musician / Artist'}</p>
                         </div>
 
+                        {/* Buttons Share/Edit/Follow */}
                         {/* Buttons Share/Edit/Follow */}
                         <div className="flex space-x-3 pb-2">
                             {/* Share always visible */}
@@ -278,48 +269,111 @@ export default function ProfilePage() {
                 </header>
 
                 {/* Nav (Tabs) */}
-                {/* ... */}
+                <nav className="w-full border-b border-white/10 mt-4 px-6 md:px-10">
+                    <ul className="flex space-x-6 text-sm font-semibold">
+                        {navItems.map(item => (
+                            <li key={item.tab}>
+                                <button
+                                    onClick={() => setActiveTab(item.tab)}
+                                    className={`py-3 ${activeTab === item.tab
+                                        ? `border-b-2 border-sc-accent text-sc-accent`
+                                        : `text-white/70 hover:text-white`
+                                    } transition duration-150`}
+                                >
+                                    {item.label}
+                                    {item.count !== undefined && <span className="ml-1 text-xs text-white/50">{item.count}</span>}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
 
                 {/* Content (2 Columns) */}
                 <main className="grid grid-cols-1 lg:grid-cols-3 gap-8 p-6 md:px-10 md:pt-6">
-                    {/* Left column (Recent, Playlists) */}
+                    {/* Left column (Main Content based on tab) */}
                     <div className="lg:col-span-2 space-y-10">
 
-                        {/* Recent Tracks */}
-                        <section>
-                            <h2 className="text-xl font-bold mb-4">Recent Tracks</h2>
-                            {profileData.tracks && profileData.tracks.length > 0 ? (
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {profileData.tracks.slice(0, 8).map((track, index) => (
-                                        <RecentTrackCard
-                                            key={track.Id}
-                                            track={track}
-                                            imageSrc={TEST_IMAGES.RECENT_1}
-                                        />
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-white/70">No recently uploaded tracks.</p>
-                            )}
-                        </section>
+                        {/* 1. ALL TAB CONTENT (Recent Tracks + Playlists) */}
+                        {activeTab === 'all' && (
+                            <>
+                                {/* Recent Tracks (5 последних) */}
+                                <section>
+                                    <h2 className="text-xl font-bold mb-4">Recent Tracks</h2>
+                                    {recentTracks.length > 0 ? (
+                                        // ⬅️ Сетка 5 колонок
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                            {recentTracks.map((track) => (
+                                                <TrackCard
+                                                    key={track.Id}
+                                                    track={track}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-white/70">No recently uploaded tracks.</p>
+                                    )}
+                                </section>
 
-                        {/* Playlists */}
-                        <section>
-                            <h2 className="text-xl font-bold mb-4">Playlists</h2>
-                            {profileData.playlists && profileData.playlists.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {profileData.playlists.map((playlist, index) => (
-                                        <PlaylistListItem
-                                            key={playlist.Id}
-                                            playlist={playlist}
-                                            imageSrc={TEST_IMAGES.PLAYLIST_1}
-                                        />
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-white/70">No public playlists.</p>
-                            )}
-                        </section>
+                                {/* Playlists */}
+                                <section>
+                                    <h2 className="text-xl font-bold mb-4">Playlists</h2>
+                                    {profileData.playlists && profileData.playlists.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {profileData.playlists.slice(0, 4).map((playlist) => (
+                                                <PlaylistListItem
+                                                    key={playlist.Id}
+                                                    playlist={playlist}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-white/70">No public playlists.</p>
+                                    )}
+                                </section>
+                            </>
+                        )}
+
+
+                        {/* 2. TRACKS TAB CONTENT (All Tracks) */}
+                        {activeTab === 'tracks' && (
+                            <section>
+                                <h2 className="text-xl font-bold mb-4">All Tracks ({tracksCount})</h2>
+                                {profileData.tracks && profileData.tracks.length > 0 ? (
+                                    // ⬅️ Сетка 4 колонки для всех треков
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {profileData.tracks.map((track) => ( // Все треки
+                                            <TrackCard
+                                                key={track.Id}
+                                                track={track}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-white/70">This user hasn't uploaded any tracks yet.</p>
+                                )}
+                            </section>
+                        )}
+
+                        {/* 3. PLAYLISTS TAB CONTENT (All Playlists) */}
+                        {activeTab === 'playlists' && (
+                            <section>
+                                <h2 className="text-xl font-bold mb-4">All Playlists ({playlistsCount})</h2>
+                                {profileData.playlists && profileData.playlists.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {profileData.playlists.map((playlist) => (
+                                            <PlaylistListItem
+                                                key={playlist.Id}
+                                                playlist={playlist}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-white/70">This user hasn't created any public playlists yet.</p>
+                                )}
+                            </section>
+                        )}
+
+
                     </div>
 
                     {/* Right column (Stats, Liked Tracks, Following) */}
@@ -344,15 +398,19 @@ export default function ProfilePage() {
                         {/* Likes (ЗАГЛУШКА) */}
                         <div className={`bg-sc-card-bg p-4 rounded-lg`}>
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-white font-bold">{likesCount} LIKES</h3>
+                                <h3 className="text-white font-bold">0 LIKES</h3>
+                                <button className={`text-sm ${ACCENT_COLOR_CLASS} hover:underline`}>Show All</button>
                             </div>
+                            <p className="text-white/70 text-sm">No liked tracks to show.</p>
                         </div>
 
                         {/* Following (ЗАГЛУШКА) */}
                         <div className={`bg-sc-card-bg p-4 rounded-lg`}>
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-white font-bold">{following.length} FOLLOWING</h3>
+                                <h3 className="text-white font-bold">0 FOLLOWING</h3>
+                                <button className={`text-sm ${ACCENT_COLOR_CLASS} hover:underline`}>Show All</button>
                             </div>
+                            <p className="text-white/70 text-sm">No users followed.</p>
                         </div>
                     </aside>
                 </main>
@@ -360,3 +418,5 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+

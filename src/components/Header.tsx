@@ -2,11 +2,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import SearchBar from "./SearchBar";
+import SearchBar from "./SearchBar"; // Предполагается, что SearchBar существует
 import Image from "next/image";
 import { User, Heart, List, Music } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useSession, signOut } from "next-auth/react";
+import { getUserProfileData } from "@/app/api/users/users.api"; // !!! НОВЫЙ ИМПОРТ
 
 export default function Header() {
     const pathname = usePathname();
@@ -16,27 +17,47 @@ export default function Header() {
     const isAuthenticated = status === 'authenticated';
     const isLoading = status === 'loading';
 
+    const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
     const [menuOpen, setMenuOpen] = useState(false);
-    const menuButtonRef = useRef<HTMLButtonElement | null>(null); // avatar
-    const menuContainerRef = useRef<HTMLDivElement | null>(null); // portal menu
-    const [menuCoords, setMenuCoords] = useState<{ top: number; left: number }>({
+    const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+    const menuContainerRef = useRef<HTMLDivElement | null>(null);
+    const [menuCoords, setMenuCoords] = useState({
         top: 0,
         left: 0,
     });
 
+    // pfp load
     useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            const target = e.target as Node | null;
-            // if click avatar - dont close
+        if (status !== "authenticated" || !session?.user?.id) {
+            setUserAvatarUrl(null);
+            return;
+        }
+
+        const fetchAvatar = async () => {
+            try {
+                // getting the pfp
+                const data = await getUserProfileData(session.user.id);
+                setUserAvatarUrl(data.avatarUrl); // avatar url from api
+            } catch (error) {
+                console.error("Failed to fetch user avatar from API:", error);
+                // session or default avatar
+                setUserAvatarUrl(session?.user?.image || "https://www.svgrepo.com/show/452030/avatar-default.svg");
+            }
+        };
+
+        fetchAvatar();
+    }, [status, session]);
+    // dependencies from status and session - so 100% update after user change
+
+    useEffect(() => {
+        function handleClickOutside(e : MouseEvent) {
+            const target = e.target as Node;
             if (menuButtonRef.current && menuButtonRef.current.contains(target)) return;
-            // if click inside the portal - dont close
             if (menuContainerRef.current && menuContainerRef.current.contains(target)) return;
-            // then close
             setMenuOpen(false);
         }
 
-        // listening "click" so onClick on elements menu finished earlier
         document.addEventListener("click", handleClickOutside);
         return () => document.removeEventListener("click", handleClickOutside);
     }, []);
@@ -50,7 +71,6 @@ export default function Header() {
     const toggleMenu = () => {
         if (!menuOpen && menuButtonRef.current) {
             const rect = menuButtonRef.current.getBoundingClientRect();
-            // absolute transition body
             const offsetX = -180;
             setMenuCoords({
                 top: rect.bottom + window.scrollY,
@@ -75,6 +95,10 @@ export default function Header() {
             </header>
         );
     }
+
+    // api or session or default pfp
+    const finalAvatarSrc = userAvatarUrl || session?.user?.image || "https://www.svgrepo.com/show/452030/avatar-default.svg";
+
 
     return (
         <header className="relative z-10">
@@ -132,9 +156,9 @@ export default function Header() {
                                     onClick={toggleMenu}
                                     className="w-10 h-10 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center hover:bg-gray-600"
                                 >
-                                    {/* Use image session.user.image, if it exists */}
+                                    {/* pfp */}
                                     <Image
-                                        src={session?.user?.image || "https://www.svgrepo.com/show/452030/avatar-default.svg"}
+                                        src={finalAvatarSrc}
                                         alt="Avatar"
                                         width={40}
                                         height={40}
@@ -145,7 +169,6 @@ export default function Header() {
                                 {menuOpen &&
                                     createPortal(
                                         <div
-                                            // This wrapper is a portal. We attach a ref to it to know if a click was made inside it
                                             ref={menuContainerRef}
                                             className="absolute w-52 rounded-xl shadow-lg bg-neutral-900 text-white ring-1 ring-gray-700 z-50"
                                             style={{
@@ -158,7 +181,7 @@ export default function Header() {
                                                 <button
                                                     onClick={() => {
                                                         setMenuOpen(false);
-                                                        router.push("/profile");
+                                                        router.push(`/profile/${session.user.id}`); // Используем ID пользователя
                                                     }}
                                                     className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800 w-full text-left"
                                                 >

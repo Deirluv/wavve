@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { UploadCloud, Mic, X, ChevronDown, Check, AlertTriangle, Disc } from 'lucide-react';
 
 import { uploadTrack, TrackApiDto } from '@/app/api/tracks/tracks.api';
+import { getGenres, GenreApiDto } from '@/app/api/genres/genres.api';
 
 const STYLES = {
     ACCENT_BG: { backgroundColor: 'var(--color-sc-accent)' },
@@ -14,6 +15,36 @@ const STYLES = {
     CARD_BG: { backgroundColor: 'var(--color-sc-card-bg)' },
     BORDER_SECONDARY: { borderColor: 'var(--color-sc-secondary)' },
 };
+
+
+const getAudioDuration = (audioFile: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(audioFile);
+        const audio = new Audio();
+
+        audio.onloadedmetadata = () => {
+            URL.revokeObjectURL(url);
+            if (audio.duration === Infinity) {
+                reject(new Error("Cannot determine duration (stream or corrupted file)."));
+            } else {
+                resolve(Math.floor(audio.duration));
+            }
+        };
+
+        audio.onerror = (e) => {
+            URL.revokeObjectURL(url);
+
+            const errorMessage = audio.error
+                ? `Media Error Code: ${audio.error.code}`
+                : 'Unknown audio loading error.';
+
+            reject(new Error(`Error loading audio file: ${errorMessage}`));
+        };
+
+        audio.src = url;
+    });
+};
+
 
 interface UploadStateProps {
     fileName: string | null;
@@ -38,19 +69,20 @@ interface MetadataFormProps {
     fileName: string | null;
     onSubmit: (data: FormSubmissionData) => Promise<void> | void;
     onRemoveFile: () => void;
+    genreOptions: GenreApiDto[];
 }
 
-// Component uploading and recording
+// component uploading and recording
 const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordToggle, isRecording, fileInputRef, recordingTime, micError } : UploadStateProps) => {
 
     return (
         <div className="space-y-6">
-            {/* File uploading */}
+            {/* file uploading */}
             <div
                 className="p-12 border-2 border-dashed flex flex-col items-center rounded-lg"
                 style={{ ...STYLES.BORDER_SECONDARY, backgroundColor: 'transparent' }}
             >
-                {/* File chosen */}
+                {/* file chosen */}
                 {fileName && status !== 'recording' ? (
                     <div className="w-full flex items-center justify-between p-4 rounded-md" style={STYLES.CARD_BG}>
                         <div className="flex items-center space-x-3">
@@ -62,7 +94,7 @@ const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordTog
                         </button>
                     </div>
                 ) : (
-                    // File choosing
+                    // file choosing
                     <>
                         <img src="/upload.png" alt="" className={"scale-80"}/>
                         <p style={STYLES.TERTIARY_COLOR} className="mt-2">Drag and drop audio files to get started.</p>
@@ -87,14 +119,14 @@ const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordTog
 
             </div>
 
-            {/* Dictofon */}
+            {/* dictofon */}
             <div
                 className="w-full p-4 rounded-lg flex items-center justify-between cursor-pointer transition duration-200 border"
                 style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}
                 onClick={onRecordToggle}
             >
                 <div className="flex items-center space-x-3">
-                    {/* Icon */}
+                    {/* icon */}
                     <div className={`p-1 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : ''}`}>
                         <Mic className='w-6 h-6' style={isRecording ? {color: 'white'} : STYLES.SECONDARY_COLOR} />
                     </div>
@@ -112,7 +144,7 @@ const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordTog
                 <ChevronDown className="w-5 h-5" style={STYLES.SECONDARY_COLOR} />
             </div>
 
-            {/* Microphone error */}
+            {/* microphone error */}
             {micError && (
                 <div className="p-3 bg-red-900/50 text-red-400 rounded-lg flex items-center space-x-2 border border-red-700">
                     <AlertTriangle className="w-5 h-5" />
@@ -123,21 +155,24 @@ const UploadState = ({ fileName, status, onRemoveFile, onUploadFile, onRecordTog
     );
 };
 
-// Metadata & Form for Submission
-const MetadataForm = ({ fileName, onSubmit, onRemoveFile } : MetadataFormProps) => {
-    // Random id, need to change. Get from server
-    const genreOptions = [
-        { name: 'Hip Hop', id: 'd7a8d7a8-d7a8-4444-b4a8-d7a8d7a8d7a8' },
-        { name: 'Electronic', id: 'e1b9e1b9-e1b9-4444-b4b9-e1b9e1b9e1b9' },
-        { name: 'Rock', id: 'f2c0f2c0-f2c0-4444-b4c0-f2c0f2c0f2c0' },
-        { name: 'Pop', id: 'a3d1a3d1-a3d1-4444-b4d1-a3d1a3d1a3d1' },
-    ];
+// metadata and form submit
+const MetadataForm = ({ fileName, onSubmit, onRemoveFile, genreOptions } : MetadataFormProps) => {
+
+    const defaultGenreId = genreOptions.length > 0 ? genreOptions[0].id : '';
 
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        genreId: genreOptions[0].id
+        genreId: defaultGenreId
     });
+
+    // update formData, eif genres list changed/loaded
+    useEffect(() => {
+        if (genreOptions.length > 0 && formData.genreId === defaultGenreId) {
+            setFormData(prev => ({ ...prev, genreId: genreOptions[0].id }));
+        }
+    }, [genreOptions]);
+
 
     const [previewFile, setPreviewFile] = useState<File | null>(null);
 
@@ -156,7 +191,7 @@ const MetadataForm = ({ fileName, onSubmit, onRemoveFile } : MetadataFormProps) 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Back to parent component
+        // back to parent component
         onSubmit({
             ...formData,
             previewFile: previewFile
@@ -167,7 +202,7 @@ const MetadataForm = ({ fileName, onSubmit, onRemoveFile } : MetadataFormProps) 
         <form onSubmit={handleSubmit} className="space-y-6">
             <h2 className="text-2xl font-bold" style={STYLES.TEXT_COLOR}>Track Info</h2>
 
-            {/* File preview */}
+            {/* file preview */}
             <div className="p-4 rounded-lg border flex items-center justify-between" style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}>
                 <div className="flex items-center space-x-3">
                     <Check className="w-6 h-6 text-green-500" />
@@ -178,7 +213,7 @@ const MetadataForm = ({ fileName, onSubmit, onRemoveFile } : MetadataFormProps) 
                 </button>
             </div>
 
-            {/* Form Fields */}
+            {/* form fields */}
             <div>
                 <label className="block text-sm font-medium mb-1" style={STYLES.SECONDARY_COLOR}>Title</label>
                 <input
@@ -204,7 +239,7 @@ const MetadataForm = ({ fileName, onSubmit, onRemoveFile } : MetadataFormProps) 
                 />
             </div>
 
-            {/* Cover Art (Preview File) Input */}
+            {/* cover art (preview file) input */}
             <div>
                 <label className="block text-sm font-medium mb-1" style={STYLES.SECONDARY_COLOR}>Cover Art (Preview)</label>
                 <input
@@ -227,15 +262,20 @@ const MetadataForm = ({ fileName, onSubmit, onRemoveFile } : MetadataFormProps) 
                     className="w-full p-3 rounded-md border text-white appearance-none cursor-pointer"
                     style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}
                 >
-                    {genreOptions.map(genre => (
-                        <option key={genre.id} value={genre.id}>
-                            {genre.name}
-                        </option>
-                    ))}
+                    {/* dynamic genres list */}
+                    {genreOptions.length > 0 ? (
+                        genreOptions.map(genre => (
+                            <option key={genre.id} value={genre.id}>
+                                {genre.name}
+                            </option>
+                        ))
+                    ) : (
+                        <option value="" disabled>Loading genres...</option>
+                    )}
                 </select>
             </div>
 
-            {/* Submission Button */}
+            {/* submission button */}
             <div className="pt-4">
                 <button
                     type="submit"
@@ -255,12 +295,21 @@ export default function UploadPage() {
     const [fileName, setFileName] = useState<string | null>(null);
     const [uploadStatus, setUploadStatus] = useState<'idle' | 'recording' | 'file_selected' | 'metadata_submitted' | 'uploading' | 'error'>('idle');
     const [isRecording, setIsRecording] = useState(false);
-    const [recordingTime, setRecordingTime] = useState(0);
+    const [recordingTime, setRecordingTime] = useState(0); // Длительность записи
+
+    const [fileDuration, setFileDuration] = useState<number>(0);
+
+    const [isRecordedFile, setIsRecordedFile] = useState(false);
+
     const [micError, setMicError] = useState<string | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
 
     const [audioFileToSend, setAudioFileToSend] = useState<File | null>(null);
     const [uploadedTrack, setUploadedTrack] = useState<TrackApiDto | null>(null);
+
+    const [genres, setGenres] = useState<GenreApiDto[]>([]);
+    const [genresLoading, setGenresLoading] = useState(true);
+    const [genresError, setGenresError] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -268,8 +317,8 @@ export default function UploadPage() {
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
 
-    // Stop recording and clean
-    const stopRecording = () => {
+    // stop recording and clean
+    const stopRecording = useCallback(() => {
         if (timerRef.current) {
             clearInterval(timerRef.current);
             timerRef.current = null;
@@ -279,27 +328,50 @@ export default function UploadPage() {
         }
         setIsRecording(false);
         setRecordingTime(0);
-    };
+    }, []);
 
-    // Clean stream
-    const cleanupStream = () => {
+    // clean stream
+    const cleanupStream = useCallback(() => {
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
-    };
+    }, []);
 
+    // useEffect for reset
     useEffect(() => {
         return () => {
             stopRecording();
             cleanupStream();
         };
+    }, [stopRecording, cleanupStream]);
+
+    // useEffect for genres loading
+    useEffect(() => {
+        const fetchGenres = async () => {
+            setGenresLoading(true);
+            try {
+                const genreList = await getGenres();
+                setGenres(genreList);
+                setGenresError(null);
+            } catch (err) {
+                const errorMessage = (err as Error).message || "Failed to load genres.";
+                setGenresError(errorMessage);
+                console.error(err);
+            } finally {
+                setGenresLoading(false);
+            }
+        };
+
+        fetchGenres();
     }, []);
 
 
-    // Dictofon
+    // dictofon
     const handleRecordToggle = async () => {
         setMicError(null);
+        setFileDuration(0); // reset duration
+        setIsRecordedFile(true); // if dictofon
 
         if (isRecording) {
             stopRecording();
@@ -348,23 +420,35 @@ export default function UploadPage() {
         }
     };
 
-    // File selectio
-    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // file select
+    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             stopRecording();
             cleanupStream();
             setMicError(null);
+            setIsRecordedFile(false);
 
-            // Save file
             setAudioFileToSend(file);
-
             setFileName(file.name);
             setUploadStatus('file_selected');
+            setUploadError(null);
+
+            try {
+                const duration = await getAudioDuration(file);
+                setFileDuration(duration);
+            } catch (err) {
+                const errorMessage = (err as Error).message || "Failed to read audio duration.";
+                setUploadError(`File Error: ${errorMessage}`);
+                setUploadStatus('error');
+                console.error(err);
+                // if error reset the file
+                handleRemoveFile();
+            }
         }
     };
 
-    // File removal
+    // file removal
     const handleRemoveFile = () => {
         setFileName(null);
         setUploadStatus('idle');
@@ -372,14 +456,16 @@ export default function UploadPage() {
         cleanupStream();
         setMicError(null);
         setUploadError(null);
-        setAudioFileToSend(null); // Reset file
+        setAudioFileToSend(null); // reset file
         setUploadedTrack(null);
+        setFileDuration(0); // reset duration
+        setIsRecordedFile(false); // reset
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
     };
 
-    // Metadata submission
+    // metadata submit
     const handleMetadataSubmit = async (metadata: {
         title: string,
         description: string,
@@ -392,30 +478,50 @@ export default function UploadPage() {
             return;
         }
 
-        const formData = new FormData();
+        if (!metadata.genreId) {
+            setUploadError("Please select a genre.");
+            setUploadStatus('error');
+            return;
+        }
 
-        // Forming data
-        formData.append("Title", metadata.title);
-        formData.append("Description", metadata.description);
-        formData.append("Duration", recordingTime.toString());
-        formData.append("GenreId", metadata.genreId);
-
-        formData.append("File", audioFileToSend, audioFileToSend.name);
-
-        if (metadata.previewFile) {
-            formData.append("Preview", metadata.previewFile, metadata.previewFile.name);
-        } else {
+        if (!metadata.previewFile) {
             setUploadError("Cover Art (Preview) is required.");
             setUploadStatus('error');
             return;
         }
 
+        // ⬅️ ОПРЕДЕЛЯЕМ ДЛИТЕЛЬНОСТЬ, КОТОРУЮ НУЖНО ОТПРАВИТЬ
+        let durationToSend: number;
+        if (isRecordedFile) {
+            // if dictofon - recording time
+            durationToSend = recordingTime;
+        } else {
+            // if loaded file then file duration
+            durationToSend = fileDuration;
+        }
+
+        if (durationToSend <= 0) {
+            setUploadError("Cannot determine file duration. Please re-upload.");
+            setUploadStatus('error');
+            return;
+        }
+
+
+        const formData = new FormData();
+
+        // forming data
+        formData.append("Title", metadata.title);
+        formData.append("Description", metadata.description);
+        formData.append("Duration", durationToSend.toString());
+        formData.append("GenreId", metadata.genreId);
+
+        formData.append("File", audioFileToSend, audioFileToSend.name);
+        formData.append("Preview", metadata.previewFile, metadata.previewFile.name);
 
         setUploadStatus('uploading');
         setUploadError(null);
 
         try {
-            // Api
             const result = await uploadTrack(formData);
             setUploadedTrack(result);
             setUploadStatus('metadata_submitted');
@@ -440,15 +546,26 @@ export default function UploadPage() {
                             'Upload Track'}
                 </h1>
 
-                {/* Quality Message */}
+                {/* quality */}
                 <p className="text-sm mb-8" style={{ ...STYLES.SECONDARY_COLOR, color: 'var(--color-sc-secondary)' }}>
                     For best quality, use WAV, FLAC, AIFF, or ALAC. The maximum file size is 4GB uncompressed.
                     <a href="#" style={STYLES.ACCENT_COLOR} className="ml-1">Learn more</a>
                 </p>
 
-                {/* Main Content Block */}
+                {/* loading or error genres */}
+                {(genresLoading || genresError) && (uploadStatus !== 'uploading' && uploadStatus !== 'metadata_submitted') && (
+                    <div className={`p-3 rounded-lg flex items-center space-x-2 mb-6 ${genresError ? 'bg-red-900/50 text-red-400 border border-red-700' : 'bg-blue-900/50 text-blue-400 border border-blue-700'}`}>
+                        {genresError ? <AlertTriangle className="w-5 h-5" /> : <Disc className="w-5 h-5 animate-spin" />}
+                        <p className="text-sm font-medium">
+                            {genresError || "Loading genres list..."}
+                        </p>
+                    </div>
+                )}
+
+
+                {/* main content block */}
                 <div className="w-full">
-                    {/* Display Error Message */}
+                    {/* error message */}
                     {uploadStatus === 'error' && uploadError && (
                         <div className="p-3 bg-red-900/50 text-red-400 rounded-lg flex items-center space-x-2 border border-red-700 mb-6">
                             <AlertTriangle className="w-5 h-5" />
@@ -472,11 +589,12 @@ export default function UploadPage() {
                     ) : null}
 
                     {/* metadata after file select or record */}
-                    {uploadStatus === 'file_selected' && fileName && !isRecording && (
+                    {uploadStatus === 'file_selected' && fileName && !isRecording && !genresError && (
                         <MetadataForm
                             fileName={fileName}
                             onSubmit={handleMetadataSubmit}
                             onRemoveFile={handleRemoveFile}
+                            genreOptions={genres}
                         />
                     )}
 
@@ -494,7 +612,7 @@ export default function UploadPage() {
                         <div className="p-8 text-center rounded-lg border" style={{ ...STYLES.CARD_BG, ...STYLES.BORDER_SECONDARY }}>
                             <Check className="w-16 h-16 mx-auto mb-4" style={STYLES.ACCENT_COLOR} />
                             <h2 className="text-2xl font-bold" style={STYLES.TEXT_COLOR}>Track Successfully Published!</h2>
-                            <p className="mt-2" style={STYLES.SECONDARY_COLOR}>Track **{uploadedTrack.Title}** is now available to listeners.</p>
+                            <p className="mt-2" style={STYLES.SECONDARY_COLOR}>Track **{uploadedTrack.title}** is now available to listeners.</p>
                             <button
                                 onClick={handleRemoveFile}
                                 className="mt-6 py-2 px-4 rounded-md font-semibold text-white"

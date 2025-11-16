@@ -1,19 +1,19 @@
 export interface TrackApiDto {
-    Id: string;
-    Title: string;
-    Description: string;
-    FileUrl: string;
-    PreviewUrl: string;
-    Duration: number;
-    UploadedAt: string;
-    UserId: string;
-    GenreId: string;
-    ListenCount: number;
-    DownloadCount: number;
-    Likes: number;
-    Comments: number;
-    GenreName: string;
-    UserName: string;
+    id: string;
+    title: string;
+    description: string;
+    fileUrl: string;
+    previewUrl: string;
+    duration: number;
+    uploadedAt: string;
+    userId: string;
+    genreId: string;
+    listenCount: number;
+    downloadCount: number;
+    likes: number;
+    comments: number;
+    genreName: string;
+    userName: string;
 }
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -36,4 +36,40 @@ export async function uploadTrack(data: FormData): Promise<TrackApiDto> {
     }
 
     return await response.json() as TrackApiDto;
+}
+
+export async function getTrackById(id: string): Promise<TrackApiDto> {
+    const url = `${apiUrl}/Tracks/${id}`;
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (!response.ok) {
+        throw new Error(`Error loading track ${id}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data as TrackApiDto;
+}
+
+export async function trackListen(id: string): Promise<void> {
+    const url = `${apiUrl}/Tracks/${id}/listen`;
+
+    const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            'Accept': '*/*',
+        },
+        body: ''
+    });
+
+    if (!response.ok && response.status !== 204) {
+        throw new Error(`Error registering listen count for track ${id}: ${response.statusText}`);
+    }
 }

@@ -1,5 +1,4 @@
 import Image from 'next/image';
-// Import Link for navigation
 import Link from 'next/link';
 
 // Utility function to create a simple slug from title and artist
@@ -28,7 +27,6 @@ interface ArtistItem {
 export default function Home() {
     const isAuth = false;
 
-    // --- Data remains the same, but we will use the slug function when mapping ---
     const hotRightNowTracks: TrackItem[] = [
         {title: "Paint The Town Red", artist: "Doja Cat", img: "https://i.ytimg.com/vi/m4_9TFeMfJE/maxresdefault.jpg"},
         {title: "Jump", artist: "Blackpink", img: "https://i.ytimg.com/vi/CgCVZdcKcqY/maxresdefault.jpg"},
@@ -88,11 +86,10 @@ export default function Home() {
         {name: "Dua Lipa", img: "https://via.placeholder.com/100x100?text=Dua"},
     ];
 
-    // --- Component JSX ---
     const TrackCard = ({item}: {item: TrackItem}) => {
         const trackId = createSlug(item.title, item.artist);
         return (
-            // The Link component wraps the track card
+            // link wrap card
             <Link href={`/song/${trackId}`} passHref>
                 <div className="group cursor-pointer">
                     <div className="relative overflow-hidden rounded-lg">
@@ -146,11 +143,10 @@ export default function Home() {
                     <h2 className="text-xl font-semibold mb-4">Hot Right Now</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {hotRightNowTracks.map((item, i) => (
-                            <HotRightNowCard key={i} item={item} /> // Using the new component
+                            <HotRightNowCard key={i} item={item} />
                         ))}
                     </div>
                 </section>
-                {/* ------------------------------------------------------------------ */}
 
                 {/* Subscribed to */}
                 {isAuth && (
@@ -167,7 +163,6 @@ export default function Home() {
                 )}
 
                 {/* Recently liked */}
-                {/* NOTE: I did NOT make 'Recently liked' items clickable, as they have a different structure and usually lead to a playlist/album/menu instead of a direct song page in this list view. If you want them to link, you'll need to modify the `LikedTrackItem` to include the `img` property and update the component. */}
                 {isAuth && (
                     <section className="mb-8">
                         <div className="flex justify-between items-center mb-4">
@@ -222,7 +217,6 @@ export default function Home() {
                         </div>
                     </section>
                 )}
-                {/* ------------------------------------------------------------------ */}
 
                 {/* Community Favorites */}
                 <section className="mb-8">
@@ -235,7 +229,6 @@ export default function Home() {
                         ))}
                     </div>
                 </section>
-                {/* ------------------------------------------------------------------ */}
 
                 {/* Most Commented  */}
                 <section className="mb-8">
@@ -248,7 +241,6 @@ export default function Home() {
                         ))}
                     </div>
                 </section>
-                {/* ------------------------------------------------------------------ */}
 
                 {/* Fresh Tracks */}
                 <section className="mb-8">
@@ -261,7 +253,6 @@ export default function Home() {
                         ))}
                     </div>
                 </section>
-                {/* ------------------------------------------------------------------ */}
             </main>
         </>
     );
