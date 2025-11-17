@@ -65,7 +65,7 @@ export default function Header() {
     const tabs = [
         { name: "Home", path: "/" },
         { name: "Explore", path: "/explore" },
-        { name: "Feed", path: "/feed" },
+        { name: "Library", path: "/library" },
     ];
 
     const toggleMenu = () => {

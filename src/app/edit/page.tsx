@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-// Import the updated API function
 import { getUserProfileData, updateUserProfile } from "@/app/api/users/users.api";
 
 export default function EditProfilePage() {
@@ -12,9 +11,7 @@ export default function EditProfilePage() {
 
     const [userName, setUserName] = useState("");
     const [bio, setBio] = useState("");
-    // ⬇️ NEW: State for the file object
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
-    // ⬇️ STILL NEEDED: To display the current avatar or set the initial URL
     const [currentAvatarUrl, setCurrentAvatarUrl] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -49,7 +46,6 @@ export default function EditProfilePage() {
         if (!session?.user?.id) return;
 
         try {
-            // ⬇️ NEW: Create FormData to handle the file upload
             const formData = new FormData();
             formData.append("userName", userName);
             formData.append("bio", bio);

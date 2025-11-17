@@ -16,6 +16,12 @@ export interface TrackApiDto {
     userName: string;
 }
 
+export interface TrackUpdateDto {
+    title?: string;
+    description?: string;
+    genreId?: string;
+}
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function uploadTrack(data: FormData): Promise<TrackApiDto> {
@@ -71,5 +77,41 @@ export async function trackListen(id: string): Promise<void> {
 
     if (!response.ok && response.status !== 204) {
         throw new Error(`Error registering listen count for track ${id}: ${response.statusText}`);
+    }
+}
+
+export async function editTrack(id: string, updateData: TrackUpdateDto): Promise<void> {
+    const url = `${apiUrl}/Tracks/${id}`;
+
+    const response = await fetch(url, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+        },
+        body: JSON.stringify(updateData),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error updating track ${id} (${response.status}): ${errorText}`);
+    }
+}
+
+export async function deleteTrack(id: string): Promise<void> {
+    const url = `${apiUrl}/Tracks/${id}`;
+
+    const response = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+            'Accept': '*/*',
+        },
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error deleting track ${id} (${response.status}): ${errorText}`);
     }
 }

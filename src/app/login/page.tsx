@@ -33,7 +33,7 @@ export default function LoginPage() {
     return (
         <main className="flex min-h-screen items-center justify-center bg-black p-6">
             <div className="flex w-[90%] h-[80%] max-w-7xl rounded-2xl overflow-hidden shadow-2xl bg-white">
-                {/* Left side */}
+                {/* left side */}
                 <div className="flex w-full md:w-1/2 items-center justify-center bg-black p-8">
                     <div className="w-full max-w-sm text-white min-h-[600px] flex flex-col justify-center">
                         <div className="mb-8 flex justify-center">
@@ -91,7 +91,7 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                {/* Right side */}
+                {/* right side */}
                 <div className="relative hidden md:flex w-1/2 items-center justify-center overflow-hidden">
                     <Image
                         src="/waves_bg_form.svg"

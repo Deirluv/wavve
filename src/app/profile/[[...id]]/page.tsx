@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -24,17 +14,12 @@ const CARD_BG_CLASS = "bg-sc-card-bg";
 const BORDER_COLOR_CLASS = "border-sc-tertiary/50";
 const ICON_COLOR_CLASS = "text-sc-secondary";
 
-// Типы для вкладок
 type ProfileTab = 'all' | 'tracks' | 'playlists';
 
-// --- Функциональные компоненты ---
 
-// Компонент для отображения трека в секции Recent/Tracks
 const TrackCard = ({ track }) => (
-    // Используем PreviewUrl для обложки
     <div className="flex flex-col">
         <img
-            // Используем PreviewUrl, если доступен, иначе заглушку
             src={track.PreviewUrl || "https://www.svgrepo.com/show/452030/avatar-default.svg"}
             alt={track.Title}
             className="w-full aspect-square object-cover rounded-md"
@@ -44,11 +29,9 @@ const TrackCard = ({ track }) => (
     </div>
 );
 
-// Компонент для отображения плейлиста
 const PlaylistListItem = ({ playlist }) => (
     <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/5 transition duration-150">
         <div className="w-14 h-14 relative flex-shrink-0">
-            {/* Используем заглушку, пока API не предоставит обложку плейлиста */}
             <img
                 src={"https://via.placeholder.com/150/1f2937/d1d5db?text=Playlist"}
                 alt={playlist.Name}
@@ -67,8 +50,6 @@ const PlaylistListItem = ({ playlist }) => (
     </div>
 );
 
-
-// --- Основной Компонент ---
 
 export default function ProfilePage() {
     const params = useParams();
@@ -172,7 +153,7 @@ export default function ProfilePage() {
     const isMyProfile = status === 'authenticated' && CURRENT_USER_ID === profileData.id;
 
     const tracksCount = profileData.tracks?.length ?? 0;
-    // ⬅️ Сортировка по дате загрузки и ограничение до 5 последних
+    // last 5 tracks
     const recentTracks = profileData.tracks ?
         [...profileData.tracks]
             .sort((a, b) => new Date(b.UploadedAt).getTime() - new Date(a.UploadedAt).getTime())
@@ -191,15 +172,15 @@ export default function ProfilePage() {
         <div className="min-h-screen flex justify-center">
             <div className="w-full max-w-7xl bg-sc-background min-h-screen text-white shadow-2xl">
 
-                {/* Header (Banner and user info) */}
+                {/* header (banner and user info) */}
                 <header className="relative">
-                    {/* Banner (Удалена фоновая картинка, оставлен простой градиент) */}
+                    {/* banner */}
                     <div className="w-full h-40 bg-gradient-to-r from-sc-accent/70 to-sc-card-bg/70"></div>
 
-                    {/* Container PFP, name and buttons */}
+                    {/* container pfp, name and buttons */}
                     <div className="flex items-end px-6 md:px-10 pb-2 -mt-10">
 
-                        {/* Pfp */}
+                        {/* pfp */}
                         <div className="relative flex-shrink-0">
                             <img
                                 src={
@@ -212,16 +193,15 @@ export default function ProfilePage() {
                             />
                         </div>
 
-                        {/* Name */}
+                        {/* name */}
                         <div className="ml-6 flex-grow">
                             <h1 className="text-3xl font-bold">{profileData.userName}</h1>
                             <p className={`${SECONDARY_TEXT_CLASS} mt-1`}>{profileData.bio || 'Musician / Artist'}</p>
                         </div>
 
-                        {/* Buttons Share/Edit/Follow */}
-                        {/* Buttons Share/Edit/Follow */}
+                        {/* buttons share/edit/follow */}
                         <div className="flex space-x-3 pb-2">
-                            {/* Share always visible */}
+                            {/* share always visible */}
                             <div className="relative">
                                 <button
                                     onClick={() => setShowShare(!showShare)}
@@ -248,7 +228,7 @@ export default function ProfilePage() {
                                 )}
                             </div>
 
-                            {/* Button EDIT or FOLLOW */}
+                            {/* button edit or follow */}
                             {isMyProfile ? (
                                 <button
                                     onClick={() => router.push("/edit")}
@@ -268,7 +248,7 @@ export default function ProfilePage() {
                     </div>
                 </header>
 
-                {/* Nav (Tabs) */}
+                {/* nav tabs */}
                 <nav className="w-full border-b border-white/10 mt-4 px-6 md:px-10">
                     <ul className="flex space-x-6 text-sm font-semibold">
                         {navItems.map(item => (
@@ -288,19 +268,19 @@ export default function ProfilePage() {
                     </ul>
                 </nav>
 
-                {/* Content (2 Columns) */}
+                {/* content 2 columns */}
                 <main className="grid grid-cols-1 lg:grid-cols-3 gap-8 p-6 md:px-10 md:pt-6">
-                    {/* Left column (Main Content based on tab) */}
+                    {/* left column (main content based on tab) */}
                     <div className="lg:col-span-2 space-y-10">
 
-                        {/* 1. ALL TAB CONTENT (Recent Tracks + Playlists) */}
+                        {/* all tab content (recent Tracks + playlists) */}
                         {activeTab === 'all' && (
                             <>
-                                {/* Recent Tracks (5 последних) */}
+                                {/* recent Tracks (last 5) */}
                                 <section>
                                     <h2 className="text-xl font-bold mb-4">Recent Tracks</h2>
                                     {recentTracks.length > 0 ? (
-                                        // ⬅️ Сетка 5 колонок
+                                        // grid 5
                                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                             {recentTracks.map((track) => (
                                                 <TrackCard
@@ -314,7 +294,7 @@ export default function ProfilePage() {
                                     )}
                                 </section>
 
-                                {/* Playlists */}
+                                {/* playlists */}
                                 <section>
                                     <h2 className="text-xl font-bold mb-4">Playlists</h2>
                                     {profileData.playlists && profileData.playlists.length > 0 ? (
@@ -334,7 +314,7 @@ export default function ProfilePage() {
                         )}
 
 
-                        {/* 2. TRACKS TAB CONTENT (All Tracks) */}
+                        {/* tracks tab */}
                         {activeTab === 'tracks' && (
                             <section>
                                 <h2 className="text-xl font-bold mb-4">All Tracks ({tracksCount})</h2>
@@ -349,12 +329,12 @@ export default function ProfilePage() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-white/70">This user hasn't uploaded any tracks yet.</p>
+                                    <p className="text-white/70">This user hasn&#39;t uploaded any tracks yet.</p>
                                 )}
                             </section>
                         )}
 
-                        {/* 3. PLAYLISTS TAB CONTENT (All Playlists) */}
+                        {/* playlists tab */}
                         {activeTab === 'playlists' && (
                             <section>
                                 <h2 className="text-xl font-bold mb-4">All Playlists ({playlistsCount})</h2>
@@ -368,7 +348,7 @@ export default function ProfilePage() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-white/70">This user hasn't created any public playlists yet.</p>
+                                    <p className="text-white/70">This user hasn&#39;t created any public playlists yet.</p>
                                 )}
                             </section>
                         )}
@@ -376,10 +356,10 @@ export default function ProfilePage() {
 
                     </div>
 
-                    {/* Right column (Stats, Liked Tracks, Following) */}
+                    {/* right column (stats, liked Tracks, following) */}
                     <aside className="lg:col-span-1 space-y-8">
 
-                        {/* Stats (Followers, Following, Tracks) */}
+                        {/* stats (followers, following, tracks) */}
                         <div className={`flex justify-between items-center p-4 ${CARD_BG_CLASS} rounded-lg`}>
                             <div className="text-center">
                                 <p className="text-xl font-bold text-white">{profileData.followersCount}</p>
@@ -395,7 +375,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        {/* Likes (ЗАГЛУШКА) */}
+                        {/* likes (ЗАГЛУШКА) */}
                         <div className={`bg-sc-card-bg p-4 rounded-lg`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-white font-bold">0 LIKES</h3>
@@ -404,7 +384,7 @@ export default function ProfilePage() {
                             <p className="text-white/70 text-sm">No liked tracks to show.</p>
                         </div>
 
-                        {/* Following (ЗАГЛУШКА) */}
+                        {/* following (ЗАГЛУШКА) */}
                         <div className={`bg-sc-card-bg p-4 rounded-lg`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-white font-bold">0 FOLLOWING</h3>

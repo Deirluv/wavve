@@ -86,7 +86,7 @@ export async function updateUserProfile(id: string, data: FormData): Promise<Use
     const response = await fetch(url, {
         method: 'PUT',
         credentials: 'include',
-        // The browser will automatically set the correct multipart/form-data header
+        // the browser will automatically set the correct multipart/form-data header
         headers: {
             'Accept': 'application/json',
         },
@@ -113,21 +113,18 @@ export async function followUser(targetUserId: string, token: string): Promise<v
         headers: {
             'Authorization': `Bearer ${token}`,
         },
-        // Тело не требуется
     });
 
     if (response.status === 401) {
         throw new Error('Unauthorized. Please log in again.');
     }
 
-    // API возвращает 200 Success с пустым телом, поэтому не парсим JSON
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Error following user (${response.status}): ${errorText}`);
     }
 }
 
-// ⬇️ НОВАЯ ФУНКЦИЯ: Отписка от пользователя
 export async function unfollowUser(targetUserId: string, token: string): Promise<void> {
     const url = `${apiUrl}/Users/${targetUserId}/unfollow`;
 
@@ -136,14 +133,12 @@ export async function unfollowUser(targetUserId: string, token: string): Promise
         headers: {
             'Authorization': `Bearer ${token}`,
         },
-        // Тело не требуется
     });
 
     if (response.status === 401) {
         throw new Error('Unauthorized. Please log in again.');
     }
 
-    // API возвращает 200 Success с пустым телом, поэтому не парсим JSON
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Error unfollowing user (${response.status}): ${errorText}`);

@@ -13,9 +13,9 @@ type PlayerState = {
     isPlaying: boolean
     currentTime: number
     duration: number
-    volume: number // Громкость от 0 до 1
+    volume: number // volume from 0 to 1
 
-    setTrack: (track: TrackMetadata) => void
+    setTrack: (track: TrackMetadata | null) => void
     togglePlay: (forcePlay?: boolean) => void
     setDuration: (duration: number) => void
     setCurrentTime: (time: number) => void
@@ -54,11 +54,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     isPlaying: false,
     currentTime: 0,
     duration: DEFAULT_DURATION,
-    volume: initialState.volume || INITIAL_VOLUME, // Initializing volume
+    volume: initialState.volume || INITIAL_VOLUME,
 
     setTrack: (track) => set({
         currentTrack: track,
-        isPlaying: true,
+        isPlaying: track !== null,
         currentTime: 0,
         duration: DEFAULT_DURATION
     }),

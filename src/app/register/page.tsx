@@ -9,33 +9,25 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
-    // ⭐ ИЗМЕНЕНИЕ 1: displayName заменено на userName
     const [userName, setUserName] = useState("")
     const [error, setError] = useState("")
     const router = useRouter()
 
-    // --- Логика валидации пароля (используется для UI и submit) ---
     const hasMinLength = password.length >= 8
     const hasNumber = /\d/.test(password)
     const hasUppercase = /[A-Z]/.test(password) // Проверка на заглавную букву
     const passwordsMatch = password === confirmPassword
 
-    // Групповая валидация для перехода на следующий шаг
     const isPasswordValid = hasMinLength && hasNumber && hasUppercase && passwordsMatch
 
-    /**
-     * Обработчик для кнопки "Назад". Переходит на предыдущий шаг.
-     */
+    // form back button
     function handleBack() {
         if (step > 1) {
             setStep(step - 1)
-            setError("") // Сброс ошибки при возврате
+            setError("")
         }
     }
 
-    /**
-     * Обработчик отправки формы. Выполняет валидацию и переход по шагам.
-     */
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         setError("")
@@ -55,7 +47,7 @@ export default function RegisterPage() {
 
         if (step === 2) {
             if (!isPasswordValid) {
-                // Вывод конкретной ошибки валидации
+
                 if (!hasMinLength) {
                     setError("Password must be at least 8 characters.")
                 } else if (!hasNumber) {
@@ -74,56 +66,29 @@ export default function RegisterPage() {
         }
 
         if (step === 3) {
-            // ---------------------------------------------
-            // ⭐ ЛОГИРОВАНИЕ ОТПРАВЛЯЕМЫХ ДАННЫХ (с новой структурой)
-            // ---------------------------------------------
-            console.log("🚀 Data being submitted to server:", {
-                email: email,
-                userName: userName, // ⭐ ИЗМЕНЕНИЕ: userName
-                password: password ? "******** (hidden)" : "N/A",
-                confirmPassword: confirmPassword ? "******** (hidden)" : "N/A", // ⭐ ИЗМЕНЕНИЕ: confirmPassword
-            })
-
-            // Финальная отправка данных на сервер
             const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     email,
-                    // ⭐ ИЗМЕНЕНИЕ 2: Обновление отправляемого тела
                     userName,
                     password,
                     confirmPassword,
                 }),
             })
 
-            // ---------------------------------------------
-            // ⭐ ЛОГИРОВАНИЕ СТАТУСА ОТВЕТА
-            // ---------------------------------------------
-            console.log(`📡 Server Response Status: ${res.status} - ${res.statusText}`)
-
             if (res.ok) {
-                console.log("✅ Registration successful! Redirecting to /login.")
                 router.push("/login")
             } else {
                 const data = await res.json()
 
-                // ---------------------------------------------
-                // ⭐ ЛОГИРОВАНИЕ ТЕЛА ОШИБКИ API
-                // ---------------------------------------------
-                console.error("❌ Registration failed with API error data (ApiError structure):", data)
-
-                // Обработка ошибки из структуры ApiError
                 let errorMessage = "Error while trying to register"
 
                 if (data.Messages && Array.isArray(data.Messages) && data.Messages.length > 0) {
-                    // Используем первое сообщение из списка Messages
                     errorMessage = data.Messages[0]
                 } else if (data.error?.title) {
-                    // Используем оригинальное поле (если структура отличается)
                     errorMessage = data.error.title
                 } else if (data.Code) {
-                    // Используем код ошибки, если нет более подробного сообщения
                     errorMessage = `Registration failed: ${data.Code}`
                 }
 
@@ -132,14 +97,14 @@ export default function RegisterPage() {
         }
     }
 
-    // Вспомогательный компонент для кружочков валидации пароля
+    // circles purple
     const ValidationItem = ({ condition, text }: { condition: boolean, text: string }) => (
         <div className="flex items-center gap-2">
             <div
                 className={`h-3 w-3 rounded-full transition-colors ${
                     condition
-                        ? "bg-purple-400 border-purple-400" // Заполненный (Passed)
-                        : "border border-purple-400"      // Обводка (Pending)
+                        ? "bg-purple-400 border-purple-400"
+                        : "border border-purple-400"
                 }`}
             ></div>
             <span>{text}</span>
@@ -152,10 +117,10 @@ export default function RegisterPage() {
             <div
                 className="flex w-[90%] h-full max-h-[800px] max-w-7xl rounded-2xl overflow-hidden shadow-2xl bg-white">
 
-                {/* Left side — form */}
+                {/* left side — form */}
                 <div className="relative flex w-full md:w-1/2 items-center justify-center bg-black p-8">
 
-                    {/* Кнопка "Назад" */}
+                    {/* button back */}
                     {step > 1 && (
                         <button
                             type="button"
@@ -180,7 +145,6 @@ export default function RegisterPage() {
                     <div className="w-full max-w-sm text-white min-h-[600px] flex flex-col justify-center">
                         <div className="mb-8 flex justify-center">
                             <div className="relative h-10 w-32">
-                                {/* Использование оригинального Image из Next.js */}
                                 <Image
                                     src="/text_logo.svg"
                                     alt="Logo"
@@ -247,14 +211,13 @@ export default function RegisterPage() {
                                         />
                                     </div>
 
-                                    {/* Правила пароля с динамическим заполнением кружочков */}
+                                    {/* purple circles */}
                                     <div className="space-y-2 text-sm text-gray-300 pt-2">
                                         <p className="font-semibold text-white">Password Requirements:</p>
                                         <ValidationItem condition={hasNumber} text="Must contain numbers"/>
                                         <ValidationItem condition={hasUppercase}
                                                         text="Must contain an uppercase letter ('A'-'Z')"/>
                                         <ValidationItem condition={hasMinLength} text="At least 8 characters"/>
-                                        {/* Проверка совпадения только после ввода пароля */}
                                         <ValidationItem condition={password.length > 0 && passwordsMatch}
                                                         text="Password match"/>
                                     </div>
@@ -263,7 +226,6 @@ export default function RegisterPage() {
 
                             {step === 3 && (
                                 <div className="space-y-2">
-                                    {/* ⭐ ИЗМЕНЕНИЕ 3: displayName заменено на userName */}
                                     <label htmlFor="userName" className="block text-sm font-medium">User
                                         Name</label>
                                     <input
@@ -284,7 +246,6 @@ export default function RegisterPage() {
                                 className={`w-full rounded-lg py-3 font-semibold transition-all duration-200 shadow-lg ${
                                     (step === 1 && !email) ||
                                     (step === 2 && !isPasswordValid) ||
-                                    // ⭐ ИЗМЕНЕНИЕ: Проверка userName
                                     (step === 3 && !userName)
                                         ? "bg-gray-700 text-gray-400 cursor-not-allowed shadow-none"
                                         : "bg-purple-600 text-white hover:bg-purple-700 active:scale-[0.99]"
@@ -292,7 +253,6 @@ export default function RegisterPage() {
                                 disabled={
                                     (step === 1 && !email) ||
                                     (step === 2 && !isPasswordValid) ||
-                                    // ⭐ ИЗМЕНЕНИЕ: Проверка userName
                                     (step === 3 && !userName)
                                 }
                             >
@@ -305,7 +265,7 @@ export default function RegisterPage() {
                     </div>
                 </div>
 
-                {/*Right side - design*/}
+                {/*right side - design*/}
 
                 <div className="relative hidden md:flex w-1/2 items-center justify-center overflow-hidden">
                     <Image

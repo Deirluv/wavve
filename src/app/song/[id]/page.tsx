@@ -2,13 +2,17 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Heart, Share2, CornerUpRight, MessageSquare, Pause, AlertTriangle, Disc } from 'lucide-react';
+import { Play, Heart, Share2, CornerUpRight, MessageSquare, Pause, AlertTriangle, Disc, Edit, Trash } from 'lucide-react';
 
-// Импорт API
-import { getTrackById, trackListen, TrackApiDto } from '@/app/api/tracks/tracks.api';
-// ⬅️ ИМПОРТ ГЛОБАЛЬНОГО ПЛЕЕРА
+import { getTrackById, trackListen, deleteTrack, TrackApiDto } from '@/app/api/tracks/tracks.api';
+
 import { usePlayerStore } from '@/store/Player'
+import { useSession } from 'next-auth/react';
+
+// 💡 НОВЫЙ ИМПОРТ МОДАЛЬНОГО ОКНА
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 
 
 interface SongPageProps {
@@ -17,7 +21,6 @@ interface SongPageProps {
     };
 }
 
-// ⚠️ Компонент загрузки
 const LoadingState = ({ message }: { message: string }) => (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
         <Disc className="w-12 h-12 mb-4 animate-spin text-purple-600" />
@@ -29,23 +32,29 @@ const LoadingState = ({ message }: { message: string }) => (
 export default function SongPage({ params }: SongPageProps) {
     const { id } = params;
 
-    // ⬇️ Состояние для данных трека и загрузки
+    const router = useRouter();
+    const { data: session, status } = useSession();
+    const CURRENT_USER_ID = session?.user?.id;
+    const isAuthenticated = status === 'authenticated';
+
+
     const [trackData, setTrackData] = useState<TrackApiDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // ⬇️ Использование глобального плеера
     const playerStore = usePlayerStore();
 
-    // ⬇️ Состояние для отслеживания отправки отчета о прослушивании
     const [listenReported, setListenReported] = useState(false);
 
-    // Определяем, относится ли текущий трек в плеере к этой странице
+    // 🔑 НОВОЕ СОСТОЯНИЕ ДЛЯ МОДАЛЬНОГО ОКНА
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+    // does this track in player = this page
     const isThisTrackInPlayer = playerStore.currentTrack?.id === id;
     const isThisTrackPlaying = isThisTrackInPlayer && playerStore.isPlaying;
 
 
-    // 1. 🌐 Загрузка данных трека
+    // upload track info
     useEffect(() => {
         if (!id) return;
 
@@ -69,11 +78,11 @@ export default function SongPage({ params }: SongPageProps) {
         fetchTrack();
     }, [id]);
 
-    // 2. 🎧 Управление проигрыванием через Store и отправка POST-запроса
+    // player
     const handlePlayToggle = useCallback(async () => {
         if (!trackData) return;
 
-        // Метаданные для плеера
+        // metadata player
         const trackMetadata = {
             id: trackData.id,
             title: trackData.title,
@@ -83,20 +92,19 @@ export default function SongPage({ params }: SongPageProps) {
         };
 
         if (isThisTrackInPlayer) {
-            // Если трек уже загружен в плеер, просто переключаем Play/Pause
+            // if track is already there - play/pause
             playerStore.togglePlay();
         } else {
-            // Если трек другой, загружаем его и запускаем
+            // if another track - load and start
             playerStore.setTrack(trackMetadata);
         }
 
-        // ⚠️ Отчет о прослушивании: отправляем, если трек не играет и отчет еще не был отправлен
-        // Логика запускается при первом клике на "Play" или при смене трека
+        // logic starts if track first click or next track
         if (!listenReported && !isThisTrackPlaying) {
             try {
                 await trackListen(id);
                 setListenReported(true);
-                // Обновляем счетчик локально
+                // update counter local
                 setTrackData(prev => prev ? ({ ...prev, listenCount: prev.listenCount + 1 }) : null);
             } catch (err) {
                 console.error("Listen report failed:", err);
@@ -105,8 +113,40 @@ export default function SongPage({ params }: SongPageProps) {
 
     }, [id, trackData, isThisTrackInPlayer, isThisTrackPlaying, listenReported, playerStore]);
 
+    // 🔑 ОБНОВЛЕННАЯ ФУНКЦИЯ: Обработка удаления трека
+    const handleDelete = async () => {
+        if (!trackData) return;
 
-    if (loading) {
+        // Блокируем UI на время удаления, пока модальное окно открыто
+        setLoading(true);
+
+        try {
+            await deleteTrack(id);
+
+            // Останавливаем плеер, если этот трек играл
+            if (isThisTrackInPlayer) {
+                playerStore.setTrack(null);
+            }
+
+            // Закрываем модальное окно перед редиректом
+            setIsDeleteModalOpen(false);
+
+            // Перенаправляем пользователя на страницу профиля
+            router.push(`/profile/${CURRENT_USER_ID}`);
+
+            // Уведомление об успехе (можно заменить на toast)
+            alert(`Track "${trackData.title}" deleted successfully.`);
+
+        } catch (err) {
+            console.error("Deletion failed:", err);
+            setError((err as Error).message || "Failed to delete track.");
+            setLoading(false); // Снимаем блокировку, если произошла ошибка
+            setIsDeleteModalOpen(false); // Закрываем модальное окно при ошибке
+        }
+    };
+
+
+    if (loading && !isDeleteModalOpen || status === 'loading') {
         return <LoadingState message="Loading track data..." />;
     }
 
@@ -120,12 +160,16 @@ export default function SongPage({ params }: SongPageProps) {
         );
     }
 
-    // 3. 🖼️ Рендеринг данных трека
+    // 🔑 НОВАЯ ПРОВЕРКА: Определяем, является ли текущий пользователь владельцем трека
+    const isOwner = isAuthenticated && CURRENT_USER_ID === trackData.userId;
+
+
+    // rendering track
     const {
         title,
         userName,
         previewUrl,
-        fileUrl, // Не используется напрямую, но остается в TrackApiDto
+        // fileUrl, // fileUrl не используется в рендере
         listenCount,
         likes,
         comments,
@@ -135,15 +179,22 @@ export default function SongPage({ params }: SongPageProps) {
     } = trackData;
 
     return (
-        // Set a base dark background for the entire page
         <main className="min-h-screen text-white">
-            {/* ❌ УДАЛЕНО: <audio ref={audioRef} src={fileUrl} preload="auto" /> */}
 
-            {/* 🎧 Header Section */}
+            {/* 🔑 ИНТЕГРАЦИЯ МОДАЛЬНОГО ОКНА */}
+            <DeleteConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDelete}
+                trackTitle={title}
+                loading={loading} // Используем loading, который блокирует кнопки в модальном окне
+            />
+
+            {/* header */}
             <section className="">
                 <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-6 items-start">
 
-                    {/* Cover Art */}
+                    {/* cover art */}
                     <div className="flex-shrink-0 w-48 h-48 sm:w-64 sm:h-64 rounded-lg overflow-hidden shadow-lg bg-gray-900">
                         {previewUrl ? (
                             <Image
@@ -158,10 +209,10 @@ export default function SongPage({ params }: SongPageProps) {
                         )}
                     </div>
 
-                    {/* Info and Play Button */}
+                    {/* info and play button */}
                     <div className="flex-grow flex flex-col justify-between h-48 sm:h-64">
                         <div className="flex flex-col">
-                            {/* Artist Link */}
+                            {/* artist link */}
                             <Link
                                 href={`/profile/${userId}`}
                                 className="text-sm font-medium text-gray-400 hover:text-purple-400 transition mb-1"
@@ -169,18 +220,18 @@ export default function SongPage({ params }: SongPageProps) {
                                 {userName}
                             </Link>
 
-                            {/* Title */}
+                            {/* title */}
                             <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 leading-tight">
                                 {title}
                             </h1>
 
-                            {/* Genre */}
+                            {/* genre */}
                             <p className="text-sm text-gray-500">
                                 Genre: **{genreName}**
                             </p>
                         </div>
 
-                        {/* ⏯️ Play Button & Stats */}
+                        {/* play button and stats */}
                         <div className="flex items-center space-x-4 mt-auto">
                             <button
                                 onClick={handlePlayToggle}
@@ -208,34 +259,61 @@ export default function SongPage({ params }: SongPageProps) {
                 </div>
             </section>
 
-            {/* Action Bar */}
+            {/* action bar */}
             <div className="max-w-7xl mx-auto px-6 py-4">
                 <div className="flex space-x-3 text-sm">
-                    {/* Like Button */}
+                    {/* like */}
                     <button className="flex items-center space-x-1 p-2 rounded-full border border-gray-700 text-gray-300 hover:bg-gray-800 transition">
                         <Heart className="w-5 h-5" />
                         <span>Like</span>
                         <span className="text-xs text-gray-500 ml-1">{likes.toLocaleString()}</span>
                     </button>
 
-                    {/* Repost Button */}
+                    {/* repost */}
                     <button className="flex items-center space-x-1 p-2 rounded-full border border-gray-700 text-gray-300 hover:bg-gray-800 transition">
                         <CornerUpRight className="w-5 h-5" />
                         <span>Repost</span>
                     </button>
 
-                    {/* Share Button */}
+                    {/* share */}
                     <button className="flex items-center space-x-1 p-2 rounded-full border border-gray-700 text-gray-300 hover:bg-gray-800 transition">
                         <Share2 className="w-5 h-5" />
                         <span>Share</span>
                     </button>
+
+                    {/* 🔑 НОВЫЕ КНОПКИ: EDIT и DELETE (Только для владельца) */}
+                    {isOwner && (
+                        <>
+                            {/* Edit Button */}
+                            <button
+                                onClick={() => router.push(`/edit-track/${id}`)} // Ведет на страницу редактирования
+                                className="flex items-center space-x-1 p-2 rounded-full border border-gray-700 text-gray-300 hover:bg-purple-800 hover:border-purple-600 transition"
+                                title="Edit Track Metadata"
+                                disabled={loading}
+                            >
+                                <Edit className="w-5 h-5" />
+                                <span>Edit</span>
+                            </button>
+
+                            {/* Delete Button */}
+                            <button
+                                onClick={() => setIsDeleteModalOpen(true)} // 💡 ОТКРЫВАЕМ МОДАЛЬНОЕ ОКНО
+                                className="flex items-center space-x-1 p-2 rounded-full border border-gray-700 text-red-400 hover:bg-red-900/50 hover:border-red-600 transition"
+                                title="Delete Track Permanently"
+                                disabled={loading}
+                            >
+                                <Trash className="w-5 h-5" />
+                                <span>Delete</span>
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* 💬 Main Content */}
+            {/* main */}
             <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
-                {/* Description/Info */}
+                {/* description */}
                 <div className="max-w-4xl">
                     <div className="p-4 rounded-xl border border-gray-800">
                         <h2 className="text-xl font-semibold mb-3 border-b border-gray-700 pb-2">Description</h2>
@@ -245,7 +323,7 @@ export default function SongPage({ params }: SongPageProps) {
                     </div>
                 </div>
 
-                {/* Comment Input (Placeholder - Comments API not implemented) */}
+                {/* comment input */}
                 <div className="max-w-4xl">
                     <div className="p-4 rounded-xl border border-gray-800">
                         <h2 className="text-xl font-semibold mb-3 border-b border-gray-700 pb-2">Join the Conversation</h2>
@@ -260,7 +338,7 @@ export default function SongPage({ params }: SongPageProps) {
                     </div>
                 </div>
 
-                {/* Comments List (Placeholder) */}
+                {/* comments list */}
                 <div className="max-w-4xl">
                     <div className="space-y-4">
                         <div className="flex items-center space-x-2 text-xl font-semibold mb-4">
