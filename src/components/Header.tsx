@@ -2,12 +2,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import SearchBar from "./SearchBar"; // Предполагается, что SearchBar существует
+import SearchBar from "./SearchBar";
 import Image from "next/image";
 import { User, Heart, List, Music } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useSession, signOut } from "next-auth/react";
-import { getUserProfileData } from "@/app/api/users/users.api"; // !!! НОВЫЙ ИМПОРТ
+import { getUserProfileData } from "@/app/api/users/users.api";
 
 export default function Header() {
     const pathname = usePathname();
