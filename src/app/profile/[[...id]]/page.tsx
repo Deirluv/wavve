@@ -1,12 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { getUserProfileData, UserProfileApiDto } from "@/app/api/users/users.api";
-import { Share2, Edit, Play, Disc, AlertTriangle } from 'lucide-react';
-import { FacebookShareButton, TwitterShareButton, TelegramShareButton } from "next-share";
-import { useRouter } from "next/navigation";
+import Link from "next/link"; // Импортируем Link для кликабельности
+import {
+    getUserProfileData,
+    UserProfileApiDto
+} from "@/app/api/users/users.api";
+import {
+    Share2,
+    Edit,
+    Play,
+    Disc,
+    AlertTriangle
+} from 'lucide-react';
+import {
+    FacebookShareButton,
+    TwitterShareButton,
+    TelegramShareButton
+} from "next-share";
 
 const ACCENT_COLOR_CLASS = "text-sc-accent";
 const SECONDARY_TEXT_CLASS = "text-sc-tertiary";
@@ -16,33 +29,39 @@ const ICON_COLOR_CLASS = "text-sc-secondary";
 
 type ProfileTab = 'all' | 'tracks' | 'playlists';
 
-
-const TrackCard = ({ track }) => (
-    <div className="flex flex-col">
-        <img
-            src={track.PreviewUrl || "https://www.svgrepo.com/show/452030/avatar-default.svg"}
-            alt={track.Title}
-            className="w-full aspect-square object-cover rounded-md"
-        />
-        <span className="text-sm font-semibold text-white mt-2 truncate">{track.Title}</span>
-        <span className={`text-xs ${SECONDARY_TEXT_CLASS} truncate`}>{track.UserName || 'Unknown Artist'}</span>
-    </div>
+// --- ИСПРАВЛЕНО: TrackCard теперь кликабельный и без ArtistName ---
+const TrackCard = ({ track }: { track: any }) => (
+    // 🔑 ИЗМЕНЕНИЕ: Оборачиваем в Link для перехода на страницу трека
+    <Link href={`/song/${track.id}`} className="block group">
+        <div className="flex flex-col">
+            <div className="relative w-full aspect-square object-cover rounded-md overflow-hidden bg-gray-700">
+                <img
+                    src={track.previewUrl || "/image_icon.png"}
+                    alt={track.title}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+            </div>
+            {/* 🔑 ИЗМЕНЕНИЕ: Удалена строка с Artist Name */}
+            <span className="text-sm font-semibold text-white mt-2 truncate group-hover:text-sc-accent transition">{track.title}</span>
+        </div>
+    </Link>
 );
 
-const PlaylistListItem = ({ playlist }) => (
+// --- PlaylistListItem (Без изменений) ---
+const PlaylistListItem = ({ playlist }: { playlist: any }) => (
     <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/5 transition duration-150">
         <div className="w-14 h-14 relative flex-shrink-0">
             <img
-                src={"https://via.placeholder.com/150/1f2937/d1d5db?text=Playlist"}
-                alt={playlist.Name}
+                src={"/image_icon.png"}
+                alt={playlist.name || playlist}
                 className="w-full h-full object-cover rounded-md"
             />
             <Play className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white w-5 h-5 opacity-75 fill-white" />
         </div>
         <div className="flex-grow">
             <span className={`text-xs ${ACCENT_COLOR_CLASS}`}>Playlist</span>
-            <h3 className="text-white font-semibold truncate">{playlist.Name}</h3>
-            <p className={`text-xs ${SECONDARY_TEXT_CLASS} truncate`}>{playlist.Description}</p>
+            <h3 className="text-white font-semibold truncate">{playlist.name || playlist}</h3>
+            <p className={`text-xs ${SECONDARY_TEXT_CLASS} truncate`}>{playlist.description || 'No description'}</p>
         </div>
         <div className={SECONDARY_TEXT_CLASS}>
             &#x22EE;
@@ -61,7 +80,7 @@ export default function ProfilePage() {
     const [profileData, setProfileData] = useState<UserProfileApiDto | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<ProfileTab>('all'); // ⬅️ Состояние для активной вкладки
+    const [activeTab, setActiveTab] = useState<ProfileTab>('all');
 
     const router = useRouter();
     const [showShare, setShowShare] = useState(false);
@@ -156,7 +175,7 @@ export default function ProfilePage() {
     // last 5 tracks
     const recentTracks = profileData.tracks ?
         [...profileData.tracks]
-            .sort((a, b) => new Date(b.UploadedAt).getTime() - new Date(a.UploadedAt).getTime())
+            .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
             .slice(0, 5)
         : [];
     const playlistsCount = profileData.playlists?.length ?? 0;
@@ -284,7 +303,7 @@ export default function ProfilePage() {
                                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                             {recentTracks.map((track) => (
                                                 <TrackCard
-                                                    key={track.Id}
+                                                    key={track.id}
                                                     track={track}
                                                 />
                                             ))}
@@ -299,9 +318,9 @@ export default function ProfilePage() {
                                     <h2 className="text-xl font-bold mb-4">Playlists</h2>
                                     {profileData.playlists && profileData.playlists.length > 0 ? (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {profileData.playlists.slice(0, 4).map((playlist) => (
+                                            {profileData.playlists.slice(0, 4).map((playlist, index) => (
                                                 <PlaylistListItem
-                                                    key={playlist.Id}
+                                                    key={playlist.id || index}
                                                     playlist={playlist}
                                                 />
                                             ))}
@@ -319,11 +338,11 @@ export default function ProfilePage() {
                             <section>
                                 <h2 className="text-xl font-bold mb-4">All Tracks ({tracksCount})</h2>
                                 {profileData.tracks && profileData.tracks.length > 0 ? (
-                                    // ⬅️ Сетка 4 колонки для всех треков
+                                    // Сетка 4 колонки для всех треков
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         {profileData.tracks.map((track) => ( // Все треки
                                             <TrackCard
-                                                key={track.Id}
+                                                key={track.id}
                                                 track={track}
                                             />
                                         ))}
@@ -340,9 +359,9 @@ export default function ProfilePage() {
                                 <h2 className="text-xl font-bold mb-4">All Playlists ({playlistsCount})</h2>
                                 {profileData.playlists && profileData.playlists.length > 0 ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {profileData.playlists.map((playlist) => (
+                                        {profileData.playlists.map((playlist, index) => (
                                             <PlaylistListItem
-                                                key={playlist.Id}
+                                                key={playlist.id || index}
                                                 playlist={playlist}
                                             />
                                         ))}
@@ -398,5 +417,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-
-

@@ -13,7 +13,7 @@ export default function SearchBar() {
         e.preventDefault();
         if (!query.trim()) return;
 
-        router.push(`/search?q=${encodeURIComponent(query)}`);
+        router.push(`/search?query=${encodeURIComponent(query)}`);
     };
 
     return (

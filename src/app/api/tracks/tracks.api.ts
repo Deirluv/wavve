@@ -115,3 +115,33 @@ export async function deleteTrack(id: string): Promise<void> {
         throw new Error(`Error deleting track ${id} (${response.status}): ${errorText}`);
     }
 }
+
+async function fetchTracksFeed(endpoint: string): Promise<TrackApiDto[]> {
+    const url = `${apiUrl}/Tracks/${endpoint}`;
+
+    const response = await fetch(url, { cache: 'no-store' });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error fetching ${endpoint} tracks (${response.status}): ${errorText}`);
+    }
+
+    return await response.json() as TrackApiDto[];
+}
+
+
+export function getHotTracks(): Promise<TrackApiDto[]> {
+    return fetchTracksFeed('hot');
+}
+
+export function getCommunityFavorites(): Promise<TrackApiDto[]> {
+    return fetchTracksFeed('communityFavorites');
+}
+
+export function getMostCommented(): Promise<TrackApiDto[]> {
+    return fetchTracksFeed('mostCommented');
+}
+
+export function getFreshTracks(): Promise<TrackApiDto[]> {
+    return fetchTracksFeed('fresh');
+}

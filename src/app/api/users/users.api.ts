@@ -36,7 +36,7 @@ export interface UserProfileApiDto {
     followingsCount: number;
     playlists: PlaylistApiDto[];
     tracks: TrackApiDto[];
-    // likes, followings — позже можно добавить
+    // likes, followings — later
 }
 
 export interface UpdateUserProfileDto {
@@ -144,3 +144,4 @@ export async function unfollowUser(targetUserId: string, token: string): Promise
         throw new Error(`Error unfollowing user (${response.status}): ${errorText}`);
     }
 }
+
