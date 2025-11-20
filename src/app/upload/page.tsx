@@ -490,7 +490,6 @@ export default function UploadPage() {
             return;
         }
 
-        // ⬅️ ОПРЕДЕЛЯЕМ ДЛИТЕЛЬНОСТЬ, КОТОРУЮ НУЖНО ОТПРАВИТЬ
         let durationToSend: number;
         if (isRecordedFile) {
             // if dictofon - recording time

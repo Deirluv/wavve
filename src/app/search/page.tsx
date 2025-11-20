@@ -1,5 +1,3 @@
-// Файл: @/app/search/page.tsx (Финальная версия с поднятым текстом Top Result)
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -23,8 +21,6 @@ import {
     SearchUserDto,
     SearchPlaylistDto
 } from '@/app/api/search/search.api';
-
-// --- COMPONENTS ---
 
 // Utility component for scrollable sections
 interface ScrollableSectionProps {
@@ -54,8 +50,7 @@ const ScrollableSection: React.FC<ScrollableSectionProps> = ({ title, children, 
     return (
         <section className="mb-8 relative">
             <h2 className="text-xl font-semibold mb-4">{title}</h2>
-
-            {/* Scroll Arrows (для больших экранов) */}
+            
             {showArrows && (
                 <>
                     <button
@@ -76,7 +71,6 @@ const ScrollableSection: React.FC<ScrollableSectionProps> = ({ title, children, 
             )}
 
             {childrenArray.length === 0 ? (
-                // Отображение "Not Found"
                 <div className="text-gray-500 p-4 border border-gray-800 rounded-lg">
                     {notFoundMessage}
                 </div>
@@ -93,7 +87,7 @@ const ScrollableSection: React.FC<ScrollableSectionProps> = ({ title, children, 
     );
 };
 
-// --- Track Card (Список) ---
+// Track Card
 
 interface TrackListCardProps {
     track: SearchTrackDto;
@@ -136,7 +130,7 @@ const TrackListCard: React.FC<TrackListCardProps> = ({ track, index }) => {
 };
 
 
-// --- Artist/User Card (Круглые) ---
+// User Card
 
 interface ArtistCardProps {
     user: SearchUserDto;
@@ -169,7 +163,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ user }) => {
 };
 
 
-// --- Playlist Card (Квадратные) ---
+// Playlist Card
 
 interface PlaylistCardProps {
     playlist: SearchPlaylistDto;
@@ -196,7 +190,7 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist }) => {
 };
 
 
-// --- Main Page Component ---
+// Main Page Component
 
 export default function SearchPage() {
     const searchParams = useSearchParams();
@@ -229,7 +223,7 @@ export default function SearchPage() {
         fetchResults();
     }, [query]);
 
-    // --- State checks (for brevity, keeping them as is) ---
+    // State checks
     if (!query) {
         return (
             <main className="min-h-screen text-white p-6 md:p-10 max-w-7xl mx-auto">
@@ -247,7 +241,7 @@ export default function SearchPage() {
             <main className="min-h-screen text-white p-6 md:p-10 max-w-7xl mx-auto">
                 <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
                     <Loader2 className="w-12 h-12 mb-4 animate-spin text-purple-600" />
-                    <p className="text-xl">Searching for "{query}"...</p>
+                    <p className="text-xl">Searching for &#34;{query}&#34;...</p>
                 </div>
             </main>
         );
@@ -287,12 +281,12 @@ export default function SearchPage() {
 
     return (
         <main className="min-h-screen text-white p-6 md:p-10 max-w-7xl mx-auto">
-            <h1 className="text-3xl font-extrabold mb-8">Search Results for "{query}"</h1>
+            <h1 className="text-3xl font-extrabold mb-8">Search Results for &#34;{query}&#34;</h1>
 
-            {/* 1. Top Results and Songs */}
+            {/* Top Results and Songs */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
 
-                {/* Top Result (First Column) */}
+                {/* Top Result */}
                 {topResultTrack && (
                     <div className="lg:col-span-1">
                         <h2 className="text-xl font-semibold mb-4 text-white">Top results</h2>
@@ -302,8 +296,8 @@ export default function SearchPage() {
                                 className="p-6 rounded-xl shadow-xl hover:opacity-90 transition cursor-pointer h-80 flex flex-col justify-start text-white"
                             >
 
-                                {/* 1. Изображение */}
-                                <div className="w-full h-auto flex-shrink-0 mb-2"> {/* Сделал mb-2 вместо mb-4 */}
+                                {/* Image */}
+                                <div className="w-full h-auto flex-shrink-0 mb-2">
                                     <div className="aspect-square relative overflow-hidden max-w-full max-h-52 rounded-lg">
                                         <Image
                                             src={topResultTrack.previewUrl || '/default_cover.png'}
@@ -314,9 +308,7 @@ export default function SearchPage() {
                                         />
                                     </div>
                                 </div>
-
-                                {/* 2. Текст */}
-                                {/* 🔑 ИЗМЕНЕНИЕ: Убрал mt-2, чтобы поднять блок выше */}
+                                
                                 <div className="min-w-0 mt-1">
                                     <p className="text-2xl font-extrabold truncate text-white">{topResultTrack.title}</p>
                                     <p className="text-md font-medium truncate text-gray-300">
@@ -328,13 +320,12 @@ export default function SearchPage() {
                     </div>
                 )}
 
-                {/* Other Songs (Second and Third Column) */}
+                {/* Other Songs */}
                 <div className={topResultTrack ? "lg:col-span-2" : "lg:col-span-3"}>
                     <h2 className="text-xl font-semibold mb-4 text-white">Songs</h2>
 
                     {otherTracks.length > 0 ? (
                         <div className="space-y-2">
-                            {/* Показываем остальные треки */}
                             {otherTracks.slice(0, 4).map((track, index) => (
                                 <TrackListCard
                                     key={track.id}
@@ -344,7 +335,6 @@ export default function SearchPage() {
                             ))}
                         </div>
                     ) : (
-                        // Сообщение, если только один трек (Top result) или 0
                         <div className="text-gray-500 p-4 border border-gray-800 rounded-lg">
                             {results.tracks.length > 0 ?
                                 "No more songs found in search results." :
@@ -355,7 +345,7 @@ export default function SearchPage() {
                 </div>
             </section>
 
-            {/* 2. Users (Circular Cards) */}
+            {/* Users */}
             <ScrollableSection
                 title="Users"
                 hasMoreThanFive={results.users.length > 5}
@@ -366,7 +356,7 @@ export default function SearchPage() {
                 ))}
             </ScrollableSection>
 
-            {/* 3. Playlists (Square Cards) */}
+            {/* Playlists */}
             <ScrollableSection
                 title="Playlists"
                 hasMoreThanFive={results.playlists.length > 5}

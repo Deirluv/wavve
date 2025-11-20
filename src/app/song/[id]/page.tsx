@@ -11,13 +11,12 @@ import { getTrackById, trackListen, deleteTrack, TrackApiDto } from '@/app/api/t
 import { usePlayerStore } from '@/store/Player'
 import { useSession } from 'next-auth/react';
 
-// 💡 НОВЫЙ ИМПОРТ МОДАЛЬНОГО ОКНА
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 
 
 interface SongPageProps {
     params: {
-        id: string; // The track ID (UUID) from the URL
+        id: string;
     };
 }
 
@@ -46,7 +45,6 @@ export default function SongPage({ params }: SongPageProps) {
 
     const [listenReported, setListenReported] = useState(false);
 
-    // 🔑 НОВОЕ СОСТОЯНИЕ ДЛЯ МОДАЛЬНОГО ОКНА
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     // does this track in player = this page
@@ -65,7 +63,7 @@ export default function SongPage({ params }: SongPageProps) {
                 const data = await getTrackById(id);
                 setTrackData(data);
 
-                // Сброс listenReported при загрузке нового трека
+                // reset listenReported
                 setListenReported(false);
             } catch (err) {
                 console.error("Error fetching track:", err);
@@ -113,35 +111,29 @@ export default function SongPage({ params }: SongPageProps) {
 
     }, [id, trackData, isThisTrackInPlayer, isThisTrackPlaying, listenReported, playerStore]);
 
-    // 🔑 ОБНОВЛЕННАЯ ФУНКЦИЯ: Обработка удаления трека
     const handleDelete = async () => {
         if (!trackData) return;
 
-        // Блокируем UI на время удаления, пока модальное окно открыто
         setLoading(true);
 
         try {
             await deleteTrack(id);
 
-            // Останавливаем плеер, если этот трек играл
             if (isThisTrackInPlayer) {
                 playerStore.setTrack(null);
             }
 
-            // Закрываем модальное окно перед редиректом
             setIsDeleteModalOpen(false);
 
-            // Перенаправляем пользователя на страницу профиля
             router.push(`/profile/${CURRENT_USER_ID}`);
 
-            // Уведомление об успехе (можно заменить на toast)
             alert(`Track "${trackData.title}" deleted successfully.`);
 
         } catch (err) {
             console.error("Deletion failed:", err);
             setError((err as Error).message || "Failed to delete track.");
-            setLoading(false); // Снимаем блокировку, если произошла ошибка
-            setIsDeleteModalOpen(false); // Закрываем модальное окно при ошибке
+            setLoading(false);
+            setIsDeleteModalOpen(false);
         }
     };
 
@@ -160,16 +152,14 @@ export default function SongPage({ params }: SongPageProps) {
         );
     }
 
-    // 🔑 НОВАЯ ПРОВЕРКА: Определяем, является ли текущий пользователь владельцем трека
     const isOwner = isAuthenticated && CURRENT_USER_ID === trackData.userId;
 
 
-    // rendering track
     const {
         title,
         userName,
         previewUrl,
-        // fileUrl, // fileUrl не используется в рендере
+        // fileUrl,
         listenCount,
         likes,
         comments,
@@ -181,13 +171,12 @@ export default function SongPage({ params }: SongPageProps) {
     return (
         <main className="min-h-screen text-white">
 
-            {/* 🔑 ИНТЕГРАЦИЯ МОДАЛЬНОГО ОКНА */}
             <DeleteConfirmModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleDelete}
                 trackTitle={title}
-                loading={loading} // Используем loading, который блокирует кнопки в модальном окне
+                loading={loading}
             />
 
             {/* header */}
@@ -281,12 +270,11 @@ export default function SongPage({ params }: SongPageProps) {
                         <span>Share</span>
                     </button>
 
-                    {/* 🔑 НОВЫЕ КНОПКИ: EDIT и DELETE (Только для владельца) */}
                     {isOwner && (
                         <>
                             {/* Edit Button */}
                             <button
-                                onClick={() => router.push(`/edit-track/${id}`)} // Ведет на страницу редактирования
+                                onClick={() => router.push(`/edit-track/${id}`)}
                                 className="flex items-center space-x-1 p-2 rounded-full border border-gray-700 text-gray-300 hover:bg-purple-800 hover:border-purple-600 transition"
                                 title="Edit Track Metadata"
                                 disabled={loading}
@@ -297,7 +285,7 @@ export default function SongPage({ params }: SongPageProps) {
 
                             {/* Delete Button */}
                             <button
-                                onClick={() => setIsDeleteModalOpen(true)} // 💡 ОТКРЫВАЕМ МОДАЛЬНОЕ ОКНО
+                                onClick={() => setIsDeleteModalOpen(true)}
                                 className="flex items-center space-x-1 p-2 rounded-full border border-gray-700 text-red-400 hover:bg-red-900/50 hover:border-red-600 transition"
                                 title="Delete Track Permanently"
                                 disabled={loading}

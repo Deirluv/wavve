@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { getUserProfileData, updateUserProfile } from "@/app/api/users/users.api";
+import { getUserProfileData, updateUserProfile, checkAuth, AuthCheckDto } from "@/app/api/users/users.api";
 
 export default function EditProfilePage() {
     const { data: session, status } = useSession();
@@ -54,6 +54,8 @@ export default function EditProfilePage() {
                 formData.append("avatar", avatarFile);
             }
 
+            const authData: AuthCheckDto = await checkAuth();
+            console.log(`${authData.userName} ${authData.email} ${authData.authenticated} ${authData.role}`)
             await updateUserProfile(session.user.id, formData);
             setSuccess(true);
             setTimeout(() => router.push(`/profile/${session.user.id}`), 1500);

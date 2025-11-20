@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import Link from "next/link"; // Импортируем Link для кликабельности
+import Link from "next/link";
 import {
     getUserProfileData,
     UserProfileApiDto
@@ -29,9 +29,7 @@ const ICON_COLOR_CLASS = "text-sc-secondary";
 
 type ProfileTab = 'all' | 'tracks' | 'playlists';
 
-// --- ИСПРАВЛЕНО: TrackCard теперь кликабельный и без ArtistName ---
 const TrackCard = ({ track }: { track: any }) => (
-    // 🔑 ИЗМЕНЕНИЕ: Оборачиваем в Link для перехода на страницу трека
     <Link href={`/song/${track.id}`} className="block group">
         <div className="flex flex-col">
             <div className="relative w-full aspect-square object-cover rounded-md overflow-hidden bg-gray-700">
@@ -41,13 +39,12 @@ const TrackCard = ({ track }: { track: any }) => (
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
             </div>
-            {/* 🔑 ИЗМЕНЕНИЕ: Удалена строка с Artist Name */}
             <span className="text-sm font-semibold text-white mt-2 truncate group-hover:text-sc-accent transition">{track.title}</span>
         </div>
     </Link>
 );
 
-// --- PlaylistListItem (Без изменений) ---
+// PlaylistListItem
 const PlaylistListItem = ({ playlist }: { playlist: any }) => (
     <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/5 transition duration-150">
         <div className="w-14 h-14 relative flex-shrink-0">
@@ -394,7 +391,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        {/* likes (ЗАГЛУШКА) */}
+                        {/* likes */}
                         <div className={`bg-sc-card-bg p-4 rounded-lg`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-white font-bold">0 LIKES</h3>
@@ -403,7 +400,7 @@ export default function ProfilePage() {
                             <p className="text-white/70 text-sm">No liked tracks to show.</p>
                         </div>
 
-                        {/* following (ЗАГЛУШКА) */}
+                        {/* following */}
                         <div className={`bg-sc-card-bg p-4 rounded-lg`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-white font-bold">0 FOLLOWING</h3>

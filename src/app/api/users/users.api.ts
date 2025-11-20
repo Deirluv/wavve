@@ -45,6 +45,14 @@ export interface UpdateUserProfileDto {
     avatarUrl: string;
 }
 
+export interface AuthCheckDto {
+    authenticated: boolean;
+    id: string | null;
+    email: string | null;
+    role: string | null;
+    userName: string | null;
+}
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getUserProfileData(id: string): Promise<UserProfileApiDto> {
@@ -145,3 +153,27 @@ export async function unfollowUser(targetUserId: string, token: string): Promise
     }
 }
 
+export async function checkAuth(): Promise<AuthCheckDto> {
+    const url = `${apiUrl}/Auth/checkAuth`;
+
+    const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+            'Accept': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error checking authentication status (${response.status}): ${errorText}`);
+    }
+
+    try {
+        const data = await response.json();
+        return data as AuthCheckDto;
+    } catch (e) {
+        throw new Error("Failed to parse authentication response.");
+    }
+}
